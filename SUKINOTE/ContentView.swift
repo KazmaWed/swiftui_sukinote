@@ -8,22 +8,46 @@
 import SwiftUI
 
 struct ContentView: View {
-    @State private var count = 0
-    
-    func countUp() {
-        count += 1
+    @State private var notes: [any NoteProtocol] = []
+
+    func addNote() {
+        notes.append(
+            LikeNote(
+                title: "New note",
+                content: "Something notable here."
+            )
+        )
     }
-    
+
     var body: some View {
-        List(
-            0..<count,
-            id: \.self
-        ) { index in
-            HStack {
-                Image(systemName: "globe")
-                    .imageScale(.large)
-                    .foregroundStyle(.tint)
-                Text("Hello, world! \(index + 1)")
+        VStack {
+            if notes.isEmpty{
+                VStack {
+                    Text("No note.")
+                        .foregroundColor(.secondary)
+                }
+                .frame(
+                    maxWidth: .infinity,
+                    maxHeight: .infinity,
+                    alignment: .center
+                )
+                .background(Color(.systemGroupedBackground))
+            } else {
+                List(notes, id: \.id) { note in
+                    HStack(spacing: 16) {
+                        Image(systemName: note.category.icon)
+                            .imageScale(.large)
+                            .foregroundStyle(.tint)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(note.title)
+                                .font(.headline)
+                            Text(note.content)
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        }
+                        Spacer()
+                    }
+                }
             }
         }
         .toolbar {
@@ -39,9 +63,9 @@ struct ContentView: View {
             ToolbarSpacer(.flexible, placement: .bottomBar)
             ToolbarItem(placement: .bottomBar) {
                 Button(
-                    action: countUp,
+                    action: addNote,
                 ) {
-                    Image(systemName: "plus")
+                    Image(systemName: "scribble")
                 }
             }
         }
