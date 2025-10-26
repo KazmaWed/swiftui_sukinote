@@ -5,9 +5,9 @@
 //  Created by Kazma Wed on 2025/10/26.
 //
 
-enum NoteCategory: String, Codable {
-    case like, dislike, anniversary
-    
+enum NoteCategory: String, Codable, CaseIterable {
+    case like, dislike, anniversary, family, hobby
+
     var displayName: String {
         switch self {
         case .like:
@@ -16,17 +16,25 @@ enum NoteCategory: String, Codable {
             return "キライ"
         case .anniversary:
             return "記念日"
+        case .family:
+            return "家族"
+        case .hobby:
+            return "趣味"
         }
     }
 
     var icon: String {
         switch self {
         case .like:
-            return "heart.fill"
+            return "heart"
         case .dislike:
-            return "hand.thumbsdown.fill"
+            return "hand.thumbsdown"
         case .anniversary:
             return "calendar"
+        case .family:
+            return "person.2"
+        case .hobby:
+            return "pencil"
         }
     }
 }
