@@ -8,10 +8,26 @@
 import SwiftUI
 
 struct EditView: View {
+    @Environment(\.dismiss) var dismiss
+    var onSave: (any NoteProtocol) -> Void  // Callback to save note
+
+    
     @State private var category: NoteCategory = .like
     @State private var title: String = ""
     @State private var content: String = ""
-    @State private var anniversaryRepeat: Bool = false
+    @State private var annual: Bool = false
+    @State private var date: Date = Date()
+    
+    func onSaveTapped() {
+        let newNote = Note.create(
+            category: category,
+            title: title,
+            content: content,
+            anniversaryDate: date
+        )
+        onSave(newNote)
+        dismiss()
+    }
 
     var body: some View {
         VStack(alignment: .leading) {
@@ -63,25 +79,24 @@ struct EditView: View {
                     Spacer().frame(height: 16)
                     DatePicker(
                         "記念日",
-                        selection: .constant(Date()),
+                        selection: .constant(date),
                         displayedComponents: [.date]
                     )
                     .datePickerStyle(.compact)
                     Spacer().frame(height: 16)
-                    Toggle(isOn: $anniversaryRepeat) {
+                    Toggle(isOn: $annual) {
                         Text("繰り返し")
                     }
                 }
             }
             Spacer()
             Button(
-                action: {}
+                action: onSaveTapped
             ) {
-                Text("Add")
+                Text("保存")
                     .frame(maxWidth: .infinity)
                     .padding()
             }
-            .buttonStyle(.glass)
         }
         .frame(
             maxWidth: .infinity,
@@ -93,5 +108,5 @@ struct EditView: View {
 }
 
 #Preview {
-    EditView()
+    EditView { _ in }
 }

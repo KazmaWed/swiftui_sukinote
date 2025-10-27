@@ -15,6 +15,49 @@ protocol NoteProtocol: Identifiable {
     var content: String { get }
 }
 
+struct Note {
+    static func create(
+        category: NoteCategory,
+        title: String,
+        content: String,
+        anniversaryDate: Date? = nil,
+        annual: Bool? = nil
+    ) -> any NoteProtocol {
+        switch category {
+        case .like:
+            return LikeNote(
+                id: UUID(),
+                category: category,
+                title: title,
+                content: content
+            )
+        case .dislike:
+            return DislikeNote(
+                id: UUID(),
+                category: category,
+                title: title,
+                content: content
+            )
+        case .anniversary:
+            return AnniversaryNote(
+                id: UUID(),
+                category: category,
+                title: title,
+                content: content,
+                date: anniversaryDate ?? Date(),
+                annual: annual ?? false
+            )
+        case .family, .hobby:
+            return LikeNote(
+                id: UUID(),
+                category: category,
+                title: title,
+                content: content
+            )
+        }
+    }
+}
+
 struct LikeNote: NoteProtocol, Codable {
     let id: UUID
     let createdAt: Date
@@ -66,6 +109,7 @@ struct AnniversaryNote: NoteProtocol, Codable {
     var title: String
     var content: String
     var date: Date
+    var annual: Bool
 
     init(
         id: UUID = UUID(),
@@ -73,7 +117,8 @@ struct AnniversaryNote: NoteProtocol, Codable {
         category: NoteCategory = .anniversary,
         title: String,
         content: String,
-        date: Date
+        date: Date,
+        annual: Bool = false
     ) {
         self.id = id
         self.createdAt = createdAt
@@ -81,5 +126,6 @@ struct AnniversaryNote: NoteProtocol, Codable {
         self.title = title
         self.content = content
         self.date = date
+        self.annual = annual
     }
 }
