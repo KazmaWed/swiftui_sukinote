@@ -10,20 +10,19 @@ import SwiftUI
 struct NoteListView: View {
     @State private var notes: [any NoteProtocol] = []
     @State private var showEditView = false
+    @State private var filterCategory = NoteCategory.allCases.first!
 
     func addNote() {
         showEditView = true
-        print("addNote()")
-//        notes.append(
-//            LikeNote(
-//                title: "New note",
-//                content: "Something notable here."
-//            )
-//        )
     }
-    
+
+    func pickCategory(_ category: NoteCategory) {
+        filterCategory = category
+    }
+
     func editNoteCallback(_ note: any NoteProtocol) {
         notes.append(note)
+        filterCategory = note.category
     }
 
     var body: some View {
@@ -58,16 +57,55 @@ struct NoteListView: View {
                     }
                 }
             }
-            .toolbar {
-                ToolbarSpacer(.flexible, placement: .bottomBar)
-                ToolbarItem(placement: .bottomBar) {
+            .overlay(alignment: .bottom) {
+                HStack {
+                    VStack {
+                        ScrollView(.horizontal) {
+                            HStack {
+                                ForEach(NoteCategory.allCases, id: \.self) {
+                                    category in
+                                    Button(
+                                        action: { pickCategory(category) }
+                                    ) {
+                                        VStack(spacing: 2) {
+                                            Image(systemName: category.icon)
+                                                .imageScale(.large)
+                                            Text(category.displayName)
+                                                .font(.caption)
+                                                .fontWeight(.semibold)
+                                        }
+                                        .padding(.horizontal, 8)
+                                    }
+                                    .foregroundStyle(
+                                        filterCategory == category
+                                            ? Color.accentColor
+                                            : Color(.black)
+                                    )
+                                }
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(Color(.white))
+                            .cornerRadius(100)
+                        }
+                    }
+                    .cornerRadius(100)
+                    .shadow(
+                        color: .black.opacity(0.15),
+                        radius: 10,
+                        x: 0,
+                        y: 5
+                    )
+                    Spacer().frame(width: 12)
                     Button(
                         action: addNote,
                     ) {
-                        Image(systemName: "scribble")
-                            .padding()
+                        Image(systemName: "pencil")
+                            .imageScale(.large)
+                            .padding(.all, 8)
                     }
-                }
+                    .buttonStyle(.glass)
+                }.padding()
             }
             .navigationDestination(
                 isPresented: $showEditView

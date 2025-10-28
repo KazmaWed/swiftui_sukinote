@@ -15,7 +15,7 @@ struct EditView: View {
     @State private var category: NoteCategory = .like
     @State private var title: String = ""
     @State private var content: String = ""
-    @State private var annual: Bool = false
+    @State private var anniversaryRepeat: Bool = false
     @State private var date: Date = Date()
     
     func onSaveTapped() {
@@ -84,7 +84,7 @@ struct EditView: View {
                     )
                     .datePickerStyle(.compact)
                     Spacer().frame(height: 16)
-                    Toggle(isOn: $annual) {
+                    Toggle(isOn: $anniversaryRepeat) {
                         Text("繰り返し")
                     }
                 }
