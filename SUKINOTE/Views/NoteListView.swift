@@ -11,8 +11,10 @@ struct NoteListView: View {
     @State private var notes: [any NoteProtocol] = []
     @State private var showEditView = false
     @State private var filterCategory = NoteCategory.allCases.first!
+    @State private var selectedNote: (any NoteProtocol)?
 
     func addNote() {
+        selectedNote = nil
         showEditView = true
     }
 
@@ -21,8 +23,14 @@ struct NoteListView: View {
     }
 
     func editNoteCallback(_ note: any NoteProtocol) {
-        notes.append(note)
+        selectedNote = nil
+        if let index = notes.firstIndex(where: { $0.id == note.id }) {
+            notes[index] = note
+        } else {
+            notes.append(note)
+        }
         filterCategory = note.category
+        showEditView = false
     }
 
     var body: some View {
@@ -53,7 +61,10 @@ struct NoteListView: View {
                                     .foregroundColor(.secondary)
                             }
                             Spacer()
-                        }
+                        }.onTapGesture(perform: {
+                            selectedNote = note
+                            showEditView = true
+                        })
                     }
                 }
             }
@@ -100,9 +111,10 @@ struct NoteListView: View {
                     Button(
                         action: addNote,
                     ) {
-                        Image(systemName: "pencil")
+                        Image(systemName: "plus")
                             .imageScale(.large)
-                            .padding(.all, 8)
+                            .padding(.vertical, 10)
+                            .padding(.horizontal, 4)
                     }
                     .buttonStyle(.glass)
                 }.padding()
@@ -110,7 +122,10 @@ struct NoteListView: View {
             .navigationDestination(
                 isPresented: $showEditView
             ) {
-                EditView { newNote in
+                EditView(
+                    noteToEdit: selectedNote,
+                    defaultCategory: filterCategory
+                ){ newNote in
                     editNoteCallback(newNote)
                 }
             }

@@ -6,7 +6,7 @@
 //
 
 enum NoteCategory: String, Codable, CaseIterable {
-    case like, dislike, anniversary, family, hobby
+    case like, dislike, anniversary, family, hobby, school, work
 
     var displayName: String {
         switch self {
@@ -20,6 +20,10 @@ enum NoteCategory: String, Codable, CaseIterable {
             return "家族"
         case .hobby:
             return "趣味"
+        case .school:
+            return "学校"
+        case .work:
+            return "仕事"
         }
     }
 
@@ -35,6 +39,10 @@ enum NoteCategory: String, Codable, CaseIterable {
             return "person.2"
         case .hobby:
             return "pencil"
+        case .school:
+            return "book"
+        case .work:
+            return "briefcase"
         }
     }
 }
