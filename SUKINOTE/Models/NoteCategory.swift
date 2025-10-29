@@ -11,19 +11,19 @@ enum NoteCategory: String, Codable, CaseIterable {
     var displayName: String {
         switch self {
         case .like:
-            return "スキ"
+            return "Like"
         case .dislike:
-            return "キライ"
+            return "Dislike"
         case .anniversary:
-            return "記念日"
+            return "Anniv."
         case .family:
-            return "家族"
+            return "Family"
         case .hobby:
-            return "趣味"
+            return "Hobby"
         case .school:
-            return "学校"
+            return "School"
         case .work:
-            return "仕事"
+            return "Work"
         }
     }
 

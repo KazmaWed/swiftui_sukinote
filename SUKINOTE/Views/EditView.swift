@@ -9,7 +9,7 @@ import SwiftUI
 
 struct EditView: View {
     @Environment(\.dismiss) var dismiss
-    var noteToEdit: (any NoteProtocol)?  // 編集するNote
+    var noteToEdit: (any NoteProtocol)?
     var defaultCategory: NoteCategory? = nil
     var onSave: (any NoteProtocol) -> Void  // Callback to save note
 
@@ -19,7 +19,6 @@ struct EditView: View {
     @State private var anniversaryRepeat: Bool = false
     @State private var date: Date = Date()
 
-    // 初期化時に既存のNoteがあればその値を使う
     init(
         noteToEdit: (any NoteProtocol)? = nil,
         defaultCategory: NoteCategory? = nil,
@@ -28,7 +27,7 @@ struct EditView: View {
         self.noteToEdit = noteToEdit
         self.onSave = onSave
 
-        // 既存Noteがあればその値で初期化、なければデフォルト値
+        // Initialize with existing note's values if available, otherwise use default values
         _category = State(
             initialValue: noteToEdit?.category
             ?? defaultCategory
@@ -37,7 +36,7 @@ struct EditView: View {
         _title = State(initialValue: noteToEdit?.title ?? "")
         _content = State(initialValue: noteToEdit?.content ?? "")
 
-        // AnniversaryNoteの場合は日付も取得
+        // For AnniversaryNote, also get the date
         if let anniversaryNote = noteToEdit as? AnniversaryNote {
             _date = State(initialValue: anniversaryNote.date)
             _anniversaryRepeat = State(
@@ -54,7 +53,7 @@ struct EditView: View {
         let newNote: any NoteProtocol
 
         if let existingNote = noteToEdit {
-            // 編集モード：既存のIDを使う
+            // Edit mode: use existing ID
             newNote = Note.create(
                 id: existingNote.id,
                 createdAt: existingNote.createdAt,
@@ -65,7 +64,7 @@ struct EditView: View {
                 annual: anniversaryRepeat
             )
         } else {
-            // 新規作成モード
+            // Create new mode
             newNote = Note.create(
                 category: category,
                 title: title,
@@ -80,7 +79,7 @@ struct EditView: View {
 
     var body: some View {
         VStack(alignment: .leading) {
-            Text("カテゴリー")
+            Text("Category")
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     ForEach(NoteCategory.allCases, id: \.self) { cat in
@@ -111,13 +110,13 @@ struct EditView: View {
             }
 
             Spacer().frame(height: 16)
-            Text("タイトル")
+            Text("Title")
             TextField("Empty", text: $title)
                 .padding()
                 .background(Color(.systemBackground))
                 .cornerRadius(8)
             Spacer().frame(height: 16)
-            Text("メモ")
+            Text("Note")
             TextField("Empty", text: $content, axis: .vertical)
                 .padding()
                 .background(Color(.systemBackground))
@@ -127,14 +126,14 @@ struct EditView: View {
                 Group {
                     Spacer().frame(height: 16)
                     DatePicker(
-                        "記念日",
+                        "Anniversary",
                         selection: .constant(date),
                         displayedComponents: [.date]
                     )
                     .datePickerStyle(.compact)
                     Spacer().frame(height: 16)
                     Toggle(isOn: $anniversaryRepeat) {
-                        Text("繰り返し")
+                        Text("Annual")
                     }
                 }
             }
@@ -142,7 +141,7 @@ struct EditView: View {
             Button(
                 action: onSaveTapped
             ) {
-                Text("保存")
+                Text("Save")
                     .frame(maxWidth: .infinity)
                     .padding()
             }
