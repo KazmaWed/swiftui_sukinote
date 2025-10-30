@@ -81,6 +81,9 @@ struct NoteListScreen: View {
                             pickCategory(category)
                         }
                     )
+                
+                    .background(Color(.white))
+                    .cornerRadius(100)
                     .shadow(
                         color: .black.opacity(0.15),
                         radius: 10,

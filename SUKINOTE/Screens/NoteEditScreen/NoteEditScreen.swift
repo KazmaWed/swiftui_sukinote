@@ -84,7 +84,7 @@ struct NoteEditScreen: View {
                 selectedCategory: category,
                 onCategorySelected: {seledted in category = seledted}
             )
-            .padding(4)
+            .padding(.vertical, 4)
             .background(Color.white)
             .cornerRadius(8)
             Spacer().frame(height: 16)
