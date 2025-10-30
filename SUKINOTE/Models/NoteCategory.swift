@@ -14,7 +14,7 @@ enum NoteCategory: String, Codable, CaseIterable {
             return "Like"
         case .dislike:
             return "Dislike"
-        case .anniversary:
+        case  .anniversary:
             return "Anniv."
         case .family:
             return "Family"
@@ -30,19 +30,38 @@ enum NoteCategory: String, Codable, CaseIterable {
     var icon: String {
         switch self {
         case .like:
-            return "heart"
+            return "hand.thumbsup"
         case .dislike:
-            return "hand.thumbsdown"
+            return "heart.slash"
         case .anniversary:
-            return "calendar"
+            return "birthday.cake"
         case .family:
             return "person.2"
         case .hobby:
-            return "pencil"
+            return "camera"
         case .school:
-            return "book"
+            return "graduationcap"
         case .work:
             return "briefcase"
+        }
+    }
+    
+    var iconFilled: String {
+        switch self {
+        case .like:
+            return "hand.thumbsup.fill"
+        case .dislike:
+            return "heart.slash.fill"
+        case .anniversary:
+            return "birthday.cake.fill"
+        case .family:
+            return "person.2.fill"
+        case .hobby:
+            return "camera.fill"
+        case .school:
+            return "graduationcap.fill"
+        case .work:
+            return "briefcase.fill"
         }
     }
 }

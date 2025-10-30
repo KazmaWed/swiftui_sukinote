@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct EditView: View {
+struct NoteEditScreen: View {
     @Environment(\.dismiss) var dismiss
     var noteToEdit: (any NoteProtocol)?
     var defaultCategory: NoteCategory? = nil
@@ -80,35 +80,13 @@ struct EditView: View {
     var body: some View {
         VStack(alignment: .leading) {
             Text("Category")
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(NoteCategory.allCases, id: \.self) { cat in
-                        Button(
-                            action: {
-                                category = cat
-                            }
-                        ) {
-                            VStack(spacing: 4) {
-                                Text(cat.displayName).font(.caption)
-                                Image(systemName: cat.icon).imageScale(.large)
-                            }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 8)
-                            .background(
-                                category == cat
-                                    ? Color.accentColor
-                                    : Color(.systemGray5)
-                            )
-                            .foregroundColor(
-                                category == cat ? .white : .primary
-                            )
-                            .cornerRadius(8)
-                        }
-                    }
-                }
-                .padding(.horizontal, 4)
-            }
-
+            CategoryPickerView(
+                selectedCategory: category,
+                onCategorySelected: {seledted in category = seledted}
+            )
+            .padding(4)
+            .background(Color.white)
+            .cornerRadius(8)
             Spacer().frame(height: 16)
             Text("Title")
             TextField("Empty", text: $title)
@@ -156,5 +134,5 @@ struct EditView: View {
 }
 
 #Preview {
-    EditView { _ in }
+    NoteEditScreen { _ in }
 }

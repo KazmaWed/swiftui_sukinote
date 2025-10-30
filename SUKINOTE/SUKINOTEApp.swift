@@ -11,7 +11,7 @@ import SwiftUI
 struct SUKINOTEApp: App {
     var body: some Scene {
         WindowGroup {
-            NoteListView()
+            NoteListScreen()
         }
     }
 }
