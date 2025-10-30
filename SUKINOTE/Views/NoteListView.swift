@@ -13,6 +13,22 @@ struct NoteListView: View {
     @State private var filterCategory = NoteCategory.allCases.first!
     @State private var selectedNote: (any NoteProtocol)?
 
+    init() {
+        // Note: Initial list itgems for testing
+        _notes = State(initialValue: [
+            Note.create(
+                category: .like,
+                title: "たまねぎ",
+                content: "サラダに入れて食べるのが大好き"
+            ),
+            Note.create(
+                category: .anniversary,
+                title: "誕生日",
+                content: "サプライズは好きじゃない"
+            ),
+        ])
+    }
+
     func addNote() {
         selectedNote = nil
         showEditView = true
@@ -31,6 +47,15 @@ struct NoteListView: View {
         }
         filterCategory = note.category
         showEditView = false
+    }
+
+    func removeNote(_ note: any NoteProtocol) {
+        notes.removeAll(where: { $0.id == note.id })
+    }
+
+    func editNote(_ note: any NoteProtocol) {
+        selectedNote = note
+        showEditView = true
     }
 
     var body: some View {
@@ -61,10 +86,24 @@ struct NoteListView: View {
                                     .foregroundColor(.secondary)
                             }
                             Spacer()
-                        }.onTapGesture(perform: {
+                        }
+                        .onTapGesture {
                             selectedNote = note
                             showEditView = true
-                        })
+                        }
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            Button(role: .destructive) {
+                                removeNote(note)
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                            Button {
+                                editNote(note)
+                            } label: {
+                                Label("Edit", systemImage: "pencil")
+                            }
+                            .tint(.blue)
+                        }
                     }
                 }
             }
@@ -125,7 +164,7 @@ struct NoteListView: View {
                 EditView(
                     noteToEdit: selectedNote,
                     defaultCategory: filterCategory
-                ){ newNote in
+                ) { newNote in
                     editNoteCallback(newNote)
                 }
             }
