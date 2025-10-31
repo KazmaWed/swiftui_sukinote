@@ -14,14 +14,7 @@ struct NoteListScreenReducer {
     struct State: Equatable {
         var notes: [Note] = []
         var filterCategory: NoteCategory = .like
-        var editNote: EditNoteState?
-    }
-
-    @ObservableState
-    struct EditNoteState: Equatable, Identifiable {
-        var id: UUID { note?.id ?? UUID() }
-        var note: Note?
-        var category: NoteCategory
+        var editNote: Note?
     }
 
     enum Action {
@@ -38,7 +31,12 @@ struct NoteListScreenReducer {
         Reduce { state, action in
             switch action {
             case .addNoteButtonTapped:
-                state.editNote = EditNoteState(note: nil, category: state.filterCategory)
+                // Create a placeholder note with the current filter category
+                state.editNote = Note(
+                    category: state.filterCategory,
+                    title: "",
+                    content: ""
+                )
                 return .none
 
             case let .categorySelected(category):
@@ -46,11 +44,11 @@ struct NoteListScreenReducer {
                 return .none
 
             case let .noteTapped(note):
-                state.editNote = EditNoteState(note: note, category: state.filterCategory)
+                state.editNote = note
                 return .none
 
             case let .editNoteTapped(note):
-                state.editNote = EditNoteState(note: note, category: state.filterCategory)
+                state.editNote = note
                 return .none
 
             case let .deleteNoteTapped(note):

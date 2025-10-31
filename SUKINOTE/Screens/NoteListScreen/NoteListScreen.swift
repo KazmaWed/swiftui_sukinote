@@ -61,10 +61,10 @@ struct NoteListScreen: View {
                     get: { store.editNote },
                     set: { if $0 == nil { store.send(.dismissEditView) } }
                 )
-            ) { editState in
+            ) { note in
                 NoteEditScreen(
-                    noteToEdit: editState.note,
-                    defaultCategory: editState.category
+                    noteToEdit: note,
+                    defaultCategory: store.filterCategory
                 ) { newNote in
                     store.send(.saveNote(newNote))
                 }
