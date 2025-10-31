@@ -6,82 +6,34 @@
 //
 
 import SwiftUI
+import ComposableArchitecture
 
 struct NoteListScreen: View {
-    @State private var notes: [any NoteProtocol] = []
-    @State private var showEditView = false
-    @State private var filterCategory = NoteCategory.allCases.first!
-    @State private var selectedNote: (any NoteProtocol)?
-
-    init() {
-        // Note: Initial list itgems for testing
-        _notes = State(initialValue: [
-            Note.create(
-                category: .like,
-                title: "たまねぎ",
-                content: "サラダに入れて食べるのが大好き"
-            ),
-            Note.create(
-                category: .anniversary,
-                title: "誕生日",
-                content: "サプライズは好きじゃない"
-            ),
-        ])
-    }
-
-    func addNote() {
-        selectedNote = nil
-        showEditView = true
-    }
-
-    func pickCategory(_ category: NoteCategory) {
-        filterCategory = category
-    }
-
-    func editNoteCallback(_ note: any NoteProtocol) {
-        selectedNote = nil
-        if let index = notes.firstIndex(where: { $0.id == note.id }) {
-            notes[index] = note
-        } else {
-            notes.append(note)
-        }
-        filterCategory = note.category
-        showEditView = false
-    }
-
-    func removeNote(_ note: any NoteProtocol) {
-        notes.removeAll(where: { $0.id == note.id })
-    }
-
-    func editNote(_ note: any NoteProtocol) {
-        selectedNote = note
-        showEditView = true
-    }
+    @Bindable var store: StoreOf<NoteListScreenReducer>
 
     var body: some View {
         NavigationStack {
             NotesListView(
-                notes: notes,
+                notes: store.notes,
                 onNoteTap: { note in
-                    selectedNote = note
-                    showEditView = true
+                    store.send(.noteTapped(note))
                 },
                 onNoteEdit: { note in
-                    editNote(note)
+                    store.send(.editNoteTapped(note))
                 },
                 onNoteDelete: { note in
-                    removeNote(note)
+                    store.send(.deleteNoteTapped(note))
                 }
             )
             .overlay(alignment: .bottom) {
                 HStack {
                     CategoryPickerView(
-                        selectedCategory: filterCategory,
+                        selectedCategory: store.filterCategory,
                         onCategorySelected: { category in
-                            pickCategory(category)
+                            store.send(.categorySelected(category))
                         }
                     )
-                
+
                     .background(Color(.white))
                     .cornerRadius(100)
                     .shadow(
@@ -92,7 +44,9 @@ struct NoteListScreen: View {
                     )
                     Spacer().frame(width: 12)
                     Button(
-                        action: addNote,
+                        action: {
+                            store.send(.addNoteButtonTapped)
+                        }
                     ) {
                         Image(systemName: "plus")
                             .imageScale(.large)
@@ -103,13 +57,16 @@ struct NoteListScreen: View {
                 }.padding()
             }
             .navigationDestination(
-                isPresented: $showEditView
-            ) {
+                item: Binding(
+                    get: { store.editNote },
+                    set: { if $0 == nil { store.send(.dismissEditView) } }
+                )
+            ) { editState in
                 NoteEditScreen(
-                    noteToEdit: selectedNote,
-                    defaultCategory: filterCategory
+                    noteToEdit: editState.note,
+                    defaultCategory: editState.category
                 ) { newNote in
-                    editNoteCallback(newNote)
+                    store.send(.saveNote(newNote))
                 }
             }
         }
@@ -117,5 +74,20 @@ struct NoteListScreen: View {
 }
 
 #Preview {
-    NoteListScreen()
+    NoteListScreen(
+        store: Store(
+            initialState: NoteListScreenReducer.State(
+                notes: [
+                    Note(
+                        category: .like,
+                        title: "Sample Note",
+                        content: "This is a sample content"
+                    )
+                ],
+                filterCategory: .like
+            )
+        ) {
+            NoteListScreenReducer()
+        }
+    )
 }

@@ -9,9 +9,9 @@ import SwiftUI
 
 struct NoteEditScreen: View {
     @Environment(\.dismiss) var dismiss
-    var noteToEdit: (any NoteProtocol)?
+    var noteToEdit: Note?
     var defaultCategory: NoteCategory? = nil
-    var onSave: (any NoteProtocol) -> Void  // Callback to save note
+    var onSave: (Note) -> Void  // Callback to save note
 
     @State private var category: NoteCategory = .like
     @State private var title: String = ""
@@ -20,9 +20,9 @@ struct NoteEditScreen: View {
     @State private var date: Date = Date()
 
     init(
-        noteToEdit: (any NoteProtocol)? = nil,
+        noteToEdit: Note? = nil,
         defaultCategory: NoteCategory? = nil,
-        onSave: @escaping (any NoteProtocol) -> Void
+        onSave: @escaping (Note) -> Void
     ) {
         self.noteToEdit = noteToEdit
         self.onSave = onSave
@@ -36,13 +36,10 @@ struct NoteEditScreen: View {
         _title = State(initialValue: noteToEdit?.title ?? "")
         _content = State(initialValue: noteToEdit?.content ?? "")
 
-        // For AnniversaryNote, also get the date
-        if let anniversaryNote = noteToEdit as? AnniversaryNote {
-            _date = State(initialValue: anniversaryNote.date)
-            _anniversaryRepeat = State(
-                initialValue:
-                    anniversaryNote.annual
-            )
+        // For anniversary notes, also get the date
+        if let note = noteToEdit, note.category == .anniversary {
+            _date = State(initialValue: note.anniversaryDate ?? Date())
+            _anniversaryRepeat = State(initialValue: note.isAnnual ?? false)
         } else {
             _date = State(initialValue: Date())
             _anniversaryRepeat = State(initialValue: false)
@@ -50,27 +47,27 @@ struct NoteEditScreen: View {
     }
 
     func onSaveTapped() {
-        let newNote: any NoteProtocol
+        let newNote: Note
 
         if let existingNote = noteToEdit {
             // Edit mode: use existing ID
-            newNote = Note.create(
+            newNote = Note(
                 id: existingNote.id,
                 createdAt: existingNote.createdAt,
                 category: category,
                 title: title,
                 content: content,
-                anniversaryDate: date,
-                annual: anniversaryRepeat
+                anniversaryDate: category == .anniversary ? date : nil,
+                isAnnual: category == .anniversary ? anniversaryRepeat : nil
             )
         } else {
             // Create new mode
-            newNote = Note.create(
+            newNote = Note(
                 category: category,
                 title: title,
                 content: content,
-                anniversaryDate: date,
-                annual: anniversaryRepeat
+                anniversaryDate: category == .anniversary ? date : nil,
+                isAnnual: category == .anniversary ? anniversaryRepeat : nil
             )
         }
         onSave(newNote)

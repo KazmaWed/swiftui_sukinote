@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct NoteListItemView: View {
-    let note: any NoteProtocol
+    let note: Note
     let onTap: () -> Void
     let onEdit: () -> Void
     let onDelete: () -> Void
@@ -27,9 +27,8 @@ struct NoteListItemView: View {
             }
             Spacer()
         }
-        .onTapGesture {
-            onTap()
-        }
+        .background(Color.white)
+        .onTapGesture { onTap() }
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
             Button(role: .destructive) {
                 onDelete()
@@ -50,7 +49,7 @@ struct NoteListItemView: View {
 #Preview {
     List {
         NoteListItemView(
-            note: Note.create(
+            note: Note(
                 category: .like,
                 title: "Sample Note",
                 content: "This is a sample content"

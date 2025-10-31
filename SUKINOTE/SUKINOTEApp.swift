@@ -6,12 +6,19 @@
 //
 
 import SwiftUI
+import ComposableArchitecture
 
 @main
 struct SUKINOTEApp: App {
     var body: some Scene {
         WindowGroup {
-            NoteListScreen()
+            NoteListScreen(
+                store: Store(
+                    initialState: NoteListScreenReducer.State()
+                ) {
+                    NoteListScreenReducer()
+                }
+            )
         }
     }
 }

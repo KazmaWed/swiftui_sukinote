@@ -8,10 +8,10 @@
 import SwiftUI
 
 struct NotesListView: View {
-    let notes: [any NoteProtocol]
-    let onNoteTap: (any NoteProtocol) -> Void
-    let onNoteEdit: (any NoteProtocol) -> Void
-    let onNoteDelete: (any NoteProtocol) -> Void
+    let notes: [Note]
+    let onNoteTap: (Note) -> Void
+    let onNoteEdit: (Note) -> Void
+    let onNoteDelete: (Note) -> Void
 
     var body: some View {
         if notes.isEmpty {
@@ -47,7 +47,7 @@ struct NotesListView: View {
 #Preview {
     NotesListView(
         notes: [
-            Note.create(
+            Note(
                 category: .like,
                 title: "Sample Note",
                 content: "This is a sample content"
