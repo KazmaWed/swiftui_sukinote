@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 import ComposableArchitecture
 
 @main
@@ -20,5 +21,6 @@ struct SUKINOTEApp: App {
                 }
             )
         }
+        .modelContainer(for: Note.self)
     }
 }

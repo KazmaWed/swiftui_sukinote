@@ -20,6 +20,11 @@
 			path = SUKINOTE;
 			sourceTree = "<group>";
 		};
+		5D69AF662EB5A09500504482 /* docs */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = docs;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -37,6 +42,7 @@
 		5D69AE992EABB5EF00504482 = {
 			isa = PBXGroup;
 			children = (
+				5D69AF662EB5A09500504482 /* docs */,
 				5D69AEA42EABB5EF00504482 /* SUKINOTE */,
 				5D69AEA32EABB5EF00504482 /* Products */,
 			);
@@ -67,6 +73,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				5D69AEA42EABB5EF00504482 /* SUKINOTE */,
+				5D69AF662EB5A09500504482 /* docs */,
 			);
 			name = SUKINOTE;
 			packageProductDependencies = (

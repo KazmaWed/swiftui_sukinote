@@ -6,16 +6,22 @@
 //
 
 import Foundation
+import SwiftData
 
-struct Note: Equatable, Identifiable, Codable {
-    let id: UUID
-    let createdAt: Date
-    var category: NoteCategory
+@Model
+final class Note: @unchecked Sendable, Identifiable {
+    @Attribute(.unique) var id: UUID
+    var createdAt: Date
+    var categoryRawValue: String
     var title: String
     var content: String
-    // Anniversary-specific fields (nil for other categories)
     var anniversaryDate: Date?
     var isAnnual: Bool?
+
+    var category: NoteCategory {
+        get { NoteCategory(rawValue: categoryRawValue) ?? .like }
+        set { categoryRawValue = newValue.rawValue }
+    }
 
     init(
         id: UUID = UUID(),
@@ -28,7 +34,7 @@ struct Note: Equatable, Identifiable, Codable {
     ) {
         self.id = id
         self.createdAt = createdAt
-        self.category = category
+        self.categoryRawValue = category.rawValue
         self.title = title
         self.content = content
         self.anniversaryDate = anniversaryDate

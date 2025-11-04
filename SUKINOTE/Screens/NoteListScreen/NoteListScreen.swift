@@ -25,6 +25,9 @@ struct NoteListScreen: View {
                     store.send(.deleteNoteTapped(note))
                 }
             )
+            .onAppear {
+                store.send(.onAppear)
+            }
             .overlay(alignment: .bottom) {
                 HStack {
                     CategoryPickerView(
