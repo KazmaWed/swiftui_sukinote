@@ -21,10 +21,12 @@ struct NoteListItemView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(note.title.isEmpty ? "No Title" : note.title)
                     .font(.headline)
-                Text(note.content)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                    .lineLimit(1)
+                if note.content != "" {
+                    Text(note.content)
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                }
             }
             Spacer()
         }
