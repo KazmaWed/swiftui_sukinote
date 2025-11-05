@@ -19,11 +19,12 @@ struct NoteListItemView: View {
                 .imageScale(.large)
                 .foregroundStyle(.tint)
             VStack(alignment: .leading, spacing: 4) {
-                Text(note.title)
+                Text(note.title.isEmpty ? "No Title" : note.title)
                     .font(.headline)
                 Text(note.content)
                     .font(.subheadline)
                     .foregroundColor(.secondary)
+                    .lineLimit(1)
             }
             Spacer()
         }
@@ -52,7 +53,7 @@ struct NoteListItemView: View {
             note: Note(
                 category: .like,
                 title: "Sample Note",
-                content: "This is a sample content"
+                content: "This is a sample content with extended length of text"
             ),
             onTap: {},
             onEdit: {},
