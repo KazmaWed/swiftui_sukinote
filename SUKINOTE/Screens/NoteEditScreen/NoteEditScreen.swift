@@ -74,52 +74,33 @@ struct NoteEditScreen: View {
         dismiss()
     }
 
+    @ViewBuilder
+    private var anniversarySection: some View {
+        Group {
+            Spacer().frame(height: 16)
+            DatePicker(
+                "Anniversary",
+                selection: $date,
+                displayedComponents: [.date]
+            )
+            .datePickerStyle(.compact)
+            Spacer().frame(height: 16)
+            Toggle(isOn: $anniversaryRepeat) {
+                Text("Annual")
+            }
+        }
+    }
+
     var body: some View {
         VStack(alignment: .leading) {
-            Text("Category")
-            CategoryPickerView(
-                selectedCategory: category,
-                onCategorySelected: {seledted in category = seledted}
-            )
-            .padding(.vertical, 4)
-            .background(Color.white)
-            .cornerRadius(8)
+            categorySection
             Spacer().frame(height: 16)
-            Text("Title")
-            TextField("Empty", text: $title)
-                .padding()
-                .background(Color(.systemBackground))
-                .cornerRadius(8)
-            Spacer().frame(height: 16)
-            Text("Note")
-            TextField("Empty", text: $content, axis: .vertical)
-                .padding()
-                .background(Color(.systemBackground))
-                .cornerRadius(8)
-                .lineLimit(5...)
+            textFieldsSection
             if category == .anniversary {
-                Group {
-                    Spacer().frame(height: 16)
-                    DatePicker(
-                        "Anniversary",
-                        selection: .constant(date),
-                        displayedComponents: [.date]
-                    )
-                    .datePickerStyle(.compact)
-                    Spacer().frame(height: 16)
-                    Toggle(isOn: $anniversaryRepeat) {
-                        Text("Annual")
-                    }
-                }
+                anniversarySection
             }
             Spacer()
-            Button(
-                action: onSaveTapped
-            ) {
-                Text("Save")
-                    .frame(maxWidth: .infinity)
-                    .padding()
-            }
+            saveButton
         }
         .frame(
             maxWidth: .infinity,
@@ -127,6 +108,54 @@ struct NoteEditScreen: View {
         )
         .padding()
         .background(Color(.systemGroupedBackground))
+    }
+
+    @ViewBuilder
+    private var categorySection: some View {
+        Text("Category")
+        CategoryPickerView(
+            selectedCategory: category,
+            onCategorySelected: { selected in category = selected }
+        )
+        .padding(.vertical, 4)
+        .background(Color.white)
+        .cornerRadius(8)
+    }
+
+    @ViewBuilder
+    private var textFieldsSection: some View {
+        Text("Title")
+        TextField("Empty", text: $title)
+            .padding()
+            .background(Color(.systemBackground))
+            .cornerRadius(8)
+        Spacer().frame(height: 16)
+        Text("Note")
+        ZStack(alignment: .topLeading) {
+            if content.isEmpty {
+                Text("Empty")
+                    .foregroundColor(Color(uiColor: .placeholderText))
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, 8)
+            }
+            TextEditor(text: $content)
+                .frame(minHeight: 100)
+                .scrollContentBackground(.hidden)
+        }
+        .padding(4)
+        .background(Color(.systemBackground))
+        .cornerRadius(8)
+    }
+
+    @ViewBuilder
+    private var saveButton: some View {
+        Button(
+            action: onSaveTapped
+        ) {
+            Text("Save")
+                .frame(maxWidth: .infinity)
+                .padding()
+        }
     }
 }
 

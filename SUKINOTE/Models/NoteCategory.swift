@@ -5,7 +5,7 @@
 //  Created by Kazma Wed on 2025/10/26.
 //
 
-enum NoteCategory: String, Codable, CaseIterable {
+enum NoteCategory: String, Codable, CaseIterable, Sendable {
     case like, dislike, anniversary, family, hobby, school, work
 
     var displayName: String {

@@ -9,7 +9,7 @@ import Foundation
 import SwiftData
 
 @Model
-final class Note: @unchecked Sendable, Identifiable {
+final class Note: Identifiable, @unchecked Sendable {
     @Attribute(.unique) var id: UUID
     var createdAt: Date
     var categoryRawValue: String

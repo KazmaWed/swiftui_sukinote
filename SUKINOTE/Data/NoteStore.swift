@@ -9,7 +9,7 @@ import Foundation
 import SwiftData
 import ComposableArchitecture
 
-struct NoteStore {
+struct NoteStore: Sendable {
     var fetchNotes: @Sendable () async throws -> [Note]
     var saveNote: @Sendable (Note) async throws -> Void
     var deleteNote: @Sendable (Note) async throws -> Void
