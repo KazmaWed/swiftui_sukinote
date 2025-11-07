@@ -10,6 +10,9 @@ import UIKit
 
 // MARK: - UIKit Component
 class SnapDialView: UIScrollView, UIGestureRecognizerDelegate {
+    // スクロール終了後のonScrollEnd遅延呼び出し用
+    var scrollEndDelay: TimeInterval = 1.2
+    private var scrollEndWorkItem: DispatchWorkItem?
     // ...existing code...
 
     // MARK: - Properties
@@ -191,9 +194,17 @@ class SnapDialView: UIScrollView, UIGestureRecognizerDelegate {
         let targetOffsetX = targetCenterX - bounds.width / 2
 
         if animated {
-            UIView.animate(withDuration: animationDuration, delay: 0, options: [.curveEaseOut]) {
+            UIView.animate(withDuration: animationDuration, delay: 0, options: [.curveEaseOut], animations: {
                 self.contentOffset.x = targetOffsetX
-            }
+            }, completion: { [weak self] _ in
+                guard let self = self else { return }
+                // アニメーション完了後に遅延してonScrollEndを呼ぶ
+                let workItem = DispatchWorkItem { [weak self] in
+                    self?.onScrollEnd?(index)
+                }
+                self.scrollEndWorkItem = workItem
+                DispatchQueue.main.asyncAfter(deadline: .now() + self.scrollEndDelay, execute: workItem)
+            })
         } else {
             contentOffset.x = targetOffsetX
         }
@@ -295,6 +306,8 @@ extension SnapDialView: UIScrollViewDelegate {
 
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
         updateCenteredItem()
+        // スクロール中に再度呼ばれたら前のWorkItemをキャンセル
+        scrollEndWorkItem?.cancel()
     }
 
     func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
@@ -316,7 +329,12 @@ extension SnapDialView: UIScrollViewDelegate {
         }
 
         isUserScrolling = false
-        onScrollEnd?(closestIndex)
+        // 遅延してonScrollEndを呼ぶ
+        let workItem = DispatchWorkItem { [weak self] in
+            self?.onScrollEnd?(closestIndex)
+        }
+        scrollEndWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + scrollEndDelay, execute: workItem)
     }
 
     func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
@@ -339,7 +357,12 @@ extension SnapDialView: UIScrollViewDelegate {
             }
 
             isUserScrolling = false
-            onScrollEnd?(closestIndex)
+            // 遅延してonScrollEndを呼ぶ
+            let workItem = DispatchWorkItem { [weak self] in
+                self?.onScrollEnd?(closestIndex)
+            }
+            scrollEndWorkItem = workItem
+            DispatchQueue.main.asyncAfter(deadline: .now() + scrollEndDelay, execute: workItem)
         }
     }
 

@@ -47,7 +47,7 @@ struct CategoryPickerView: View {
             let category = items[index]
             let isSelected = index == centeredIndex
 
-            VStack(spacing: 2) {
+            VStack(spacing: 0) {
                 Image(
                     systemName: isSelected
                         ? category.iconFilled
@@ -70,7 +70,7 @@ struct CategoryPickerView: View {
                     ? Color.white
                     : Color(.black)
             )
-            .cornerRadius(8)
+            .cornerRadius(16)
             .contentShape(Rectangle())
             .animation(.easeInOut(duration: highlightAnimationDuration), value: centeredIndex)
         }
