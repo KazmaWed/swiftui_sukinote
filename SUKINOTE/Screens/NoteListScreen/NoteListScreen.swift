@@ -10,6 +10,8 @@ import ComposableArchitecture
 
 struct NoteListScreen: View {
     @Bindable var store: StoreOf<NoteListScreenReducer>
+    @State private var fabWidth: CGFloat = 0
+    @State private var isScrolling: Bool = false
 
     var body: some View {
         NavigationStack {
@@ -29,35 +31,104 @@ struct NoteListScreen: View {
                 store.send(.onAppear)
             }
             .overlay(alignment: .bottom) {
-                HStack {
-                    CategoryPickerView(
-                        selectedCategory: store.filterCategory,
-                        onCategorySelected: { category in
-                            store.send(.categorySelected(category))
-                        }
-                    )
+                let animationDuration: Double = 0.3
+                let highlightAnimationDuration: Double = 0.1
+                
+                ZStack {
+                    if !isScrolling {
+                        HStack {
+                            Button(
+                                action: {
+                                    // TODO
+                                }
+                            ) {
+                                Image(systemName: "person")
+                                    .imageScale(.large)
+                                    .padding(.vertical, 10)
+                                    .padding(.horizontal, 4)
+                            }
+                            .buttonStyle(.glass)
+                            .background(
+                                GeometryReader { geometry in
+                                    Color.clear
+                                        .onAppear {
+                                            fabWidth = geometry.size.width
+                                        }
+                                        .onChange(of: geometry.size.width) { _, newWidth in
+                                        fabWidth = newWidth
+                                    }
+                                }
+                            )
 
-                    .background(Color(.white))
-                    .cornerRadius(100)
-                    .shadow(
-                        color: .black.opacity(0.15),
-                        radius: 10,
-                        x: 0,
-                        y: 5
-                    )
-                    Spacer().frame(width: 12)
-                    Button(
-                        action: {
-                            store.send(.addNoteButtonTapped)
+                            Spacer()
+
+                            Button(
+                                action: {
+                                    store.send(.addNoteButtonTapped)
+                                }
+                            ) {
+                                Image(systemName: "plus")
+                                    .imageScale(.large)
+                                    .padding(.vertical, 10)
+                                    .padding(.horizontal, 4)
+                            }
+                            .buttonStyle(.glass)
+                            .background(
+                                GeometryReader { geometry in
+                                    Color.clear
+                                        .onAppear {
+                                            fabWidth = geometry.size.width
+                                        }
+                                        .onChange(of: geometry.size.width) { _, newWidth in
+                                        fabWidth = newWidth
+                                    }
+                                }
+                            )
                         }
-                    ) {
-                        Image(systemName: "plus")
-                            .imageScale(.large)
-                            .padding(.vertical, 10)
-                            .padding(.horizontal, 4)
+                        .transition(.opacity.combined(with: .scale))
                     }
-                    .buttonStyle(.glass)
-                }.padding()
+
+                    HStack(spacing: 12) {
+                        if !isScrolling {
+                            Spacer()
+                                .frame(width: fabWidth)
+                                .transition(.opacity.combined(with: .scale))
+                        }
+
+                        CategoryPickerView(
+                            selectedCategory: store.filterCategory,
+                            onCategorySelected: { category in
+                                store.send(.categorySelected(category))
+                            },
+                            animationDuration: animationDuration,
+                            highlightAnimationDuration: highlightAnimationDuration,
+                            onScrollBegin: {
+                                isScrolling = true
+                            },
+                            onScrollEnd: {
+                                isScrolling = false
+                            }
+                        )
+                        .background(Color(.white))
+                        .cornerRadius(100)
+                        .shadow(
+                            color: .black.opacity(0.15),
+                            radius: 10,
+                            x: 0,
+                            y: 5
+                        )
+                        .frame(maxWidth: isScrolling ? .infinity : nil)
+
+                        if !isScrolling {
+                            Spacer()
+                                .frame(width: fabWidth)
+                                .transition(.opacity.combined(with: .scale))
+                        }
+                    }
+                    .padding(.horizontal, 0)
+                }
+                .padding()
+                .animation(.spring(response: animationDuration), value: isScrolling)
             }
             .navigationDestination(
                 item: Binding(

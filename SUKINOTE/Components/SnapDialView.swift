@@ -9,7 +9,8 @@ import SwiftUI
 import UIKit
 
 // MARK: - UIKit Component
-class SnapDialView: UIScrollView {
+class SnapDialView: UIScrollView, UIGestureRecognizerDelegate {
+    // ...existing code...
 
     // MARK: - Properties
     private let contentStackView: UIStackView = {
@@ -35,6 +36,7 @@ class SnapDialView: UIScrollView {
     var onScrollBegin: (() -> Void)?
     var onScrollEnd: ((Int) -> Void)?
     var onTap: ((Int) -> Void)?
+    var onDistanceChanged: ((Int, CGFloat) -> Void)?  // (index, distance from center)
 
     // MARK: - Initialization
     override init(frame: CGRect) {
@@ -133,6 +135,12 @@ class SnapDialView: UIScrollView {
             view.addGestureRecognizer(tapGesture)
             view.isUserInteractionEnabled = true
             view.tag = index
+
+            // Add long press gesture for highlight effect
+            let longPressGesture = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress(_:)))
+            longPressGesture.minimumPressDuration = 0.0
+            longPressGesture.delegate = self
+            view.addGestureRecognizer(longPressGesture)
         }
 
         layoutIfNeeded()
@@ -148,6 +156,31 @@ class SnapDialView: UIScrollView {
 
         // Scroll to the tapped index
         scrollToIndex(index, animated: true)
+    }
+
+    @objc private func handleLongPress(_ gesture: UILongPressGestureRecognizer) {
+        guard let pressedView = gesture.view else { return }
+
+        switch gesture.state {
+        case .began:
+            UIView.animate(withDuration: 0.1, delay: 0, options: [.allowUserInteraction, .curveEaseOut]) {
+                pressedView.alpha = 0.75
+                pressedView.transform = CGAffineTransform(scaleX: 1.2, y: 1.2)
+            }
+        case .ended, .cancelled, .failed:
+            UIView.animate(withDuration: 0.2, delay: 0, options: [.allowUserInteraction, .curveEaseOut]) {
+                pressedView.alpha = 1.0
+                pressedView.transform = .identity
+            }
+        default:
+            break
+        }
+    }
+
+    // MARK: - UIGestureRecognizerDelegate
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+        // Allow tap and long press gestures to work together
+        return true
     }
 
     func scrollToIndex(_ index: Int, animated: Bool = false) {
@@ -250,6 +283,13 @@ class SnapDialView: UIScrollView {
 extension SnapDialView: UIScrollViewDelegate {
     func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
         isUserScrolling = true
+        // スクロール開始時に全てのchildViewsのalpha/transformを元に戻す
+        for view in childViews {
+            UIView.animate(withDuration: 0.15, delay: 0, options: [.allowUserInteraction, .curveEaseOut]) {
+                view.alpha = 1.0
+                view.transform = .identity
+            }
+        }
         onScrollBegin?()
     }
 
@@ -340,6 +380,7 @@ struct SnapDial<Content: View>: UIViewRepresentable {
     var onScrollBegin: (() -> Void)?
     var onScrollEnd: ((Int) -> Void)?
     var onTap: ((Int) -> Void)?
+    var onDistanceChanged: ((Int, CGFloat) -> Void)?
 
     init(
         spacing: CGFloat = 0,
@@ -350,6 +391,7 @@ struct SnapDial<Content: View>: UIViewRepresentable {
         onScrollBegin: (() -> Void)? = nil,
         onScrollEnd: ((Int) -> Void)? = nil,
         onTap: ((Int) -> Void)? = nil,
+        onDistanceChanged: ((Int, CGFloat) -> Void)? = nil,
         @ViewBuilder content: () -> Content
     ) {
         self.content = [content()]
@@ -361,6 +403,7 @@ struct SnapDial<Content: View>: UIViewRepresentable {
         self.onScrollBegin = onScrollBegin
         self.onScrollEnd = onScrollEnd
         self.onTap = onTap
+        self.onDistanceChanged = onDistanceChanged
     }
 
     init(
@@ -372,6 +415,7 @@ struct SnapDial<Content: View>: UIViewRepresentable {
         onScrollBegin: (() -> Void)? = nil,
         onScrollEnd: ((Int) -> Void)? = nil,
         onTap: ((Int) -> Void)? = nil,
+        onDistanceChanged: ((Int, CGFloat) -> Void)? = nil,
         content: [Content]
     ) {
         self.content = content
@@ -383,6 +427,7 @@ struct SnapDial<Content: View>: UIViewRepresentable {
         self.onScrollBegin = onScrollBegin
         self.onScrollEnd = onScrollEnd
         self.onTap = onTap
+        self.onDistanceChanged = onDistanceChanged
     }
 
     func makeUIView(context: Context) -> SnapDialView {
@@ -413,6 +458,12 @@ struct SnapDial<Content: View>: UIViewRepresentable {
             DispatchQueue.main.async {
                 self.onTap?(index)
                 self.centeredIndex = index
+            }
+        }
+
+        dialView.onDistanceChanged = { index, distance in
+            DispatchQueue.main.async {
+                self.onDistanceChanged?(index, distance)
             }
         }
 
@@ -481,6 +532,12 @@ struct SnapDial<Content: View>: UIViewRepresentable {
                 self.centeredIndex = index
             }
         }
+
+        uiView.onDistanceChanged = { index, distance in
+            DispatchQueue.main.async {
+                self.onDistanceChanged?(index, distance)
+            }
+        }
     }
 
     func makeCoordinator() -> Coordinator {
@@ -506,6 +563,7 @@ extension SnapDial {
         onScrollBegin: (() -> Void)? = nil,
         onScrollEnd: ((Int) -> Void)? = nil,
         onTap: ((Int) -> Void)? = nil,
+        onDistanceChanged: ((Int, CGFloat) -> Void)? = nil,
         @ViewBuilder content: @escaping (Data.Element) -> Content
     ) {
         self.content = data.map(content)
@@ -517,58 +575,51 @@ extension SnapDial {
         self.onScrollBegin = onScrollBegin
         self.onScrollEnd = onScrollEnd
         self.onTap = onTap
+        self.onDistanceChanged = onDistanceChanged
     }
 }
 
 // MARK: - Preview
 #Preview {
-    struct SnapDialPreview: View {
-        @State private var centeredIndex: Int = -1
-        @State private var scrollBegan: Bool = false
-        @State private var lastSnappedIndex: Int = -1
+    @Previewable @State var centeredIndex: Int = -1
+    @Previewable @State var scrollBegan: Bool = false
 
+    let animationDuration: Double = 0.2
 
-        var body: some View {
-            let animationDuration: Double = 0.2
-            
-            VStack{
-                Spacer()
-                SnapDial(
-                    0..<8,
-                    distribution: .fill,
-                    animationDuration: animationDuration,
-                    centeredIndex: $centeredIndex,
-                    initialIndex: 1,
-                    onScrollBegin: {
-                        scrollBegan = true
-                    },
-                    onScrollEnd: { _ in
-                        scrollBegan = false
-                    },
-                    onTap: { index in
-                        print("Tapped index: \(index)")
-                    }
-                ) { index in
-                    let isSelected = index == centeredIndex
-
-                    Text("\(index + 1)")
-                        .frame(width: 40, height: 40)
-                        .background(isSelected ? Color.blue : Color(.systemBackground))
-                        .foregroundColor(isSelected ? .white : .primary)
-                        .cornerRadius(12)
-                        .scaleEffect(isSelected ? 1.0 : 0.9)
-                        .animation(.spring(response: animationDuration), value: isSelected)
-                }
-                .frame(height: 54)
-                .frame(maxWidth: scrollBegan ? .infinity : 240)
-                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
-                .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: 5)
-                .animation(.spring(response: animationDuration), value: scrollBegan)
-                Spacer()
+    VStack {
+        Spacer()
+        SnapDial(
+            0..<8,
+            distribution: .fill,
+            animationDuration: animationDuration,
+            centeredIndex: $centeredIndex,
+            initialIndex: 1,
+            onScrollBegin: {
+                scrollBegan = true
+            },
+            onScrollEnd: { _ in
+                scrollBegan = false
+            },
+            onTap: { index in
+                print("Tapped index: \(index)")
             }
-            .padding()
-        }
-    }
+        ) { index in
+            let isSelected = index == centeredIndex
 
-    return SnapDialPreview()
+            Text("\(index + 1)")
+                .frame(width: 40, height: 40)
+                .background(isSelected ? Color.blue : Color(.systemBackground))
+                .foregroundColor(isSelected ? .white : .primary)
+                .cornerRadius(12)
+                .scaleEffect(isSelected ? 1.0 : 0.9)
+                .animation(.spring(response: animationDuration), value: isSelected)
+        }
+        .frame(height: 54)
+        .frame(maxWidth: scrollBegan ? .infinity : 240)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+        .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: 5)
+        .animation(.spring(response: animationDuration), value: scrollBegan)
+        Spacer()
+    }
+    .padding()
 }
