@@ -41,4 +41,3 @@ final class Note: Identifiable, @unchecked Sendable {
         self.isAnnual = isAnnual
     }
 }
-
