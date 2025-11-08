@@ -33,14 +33,10 @@ struct NoteListScreen: View {
                 onNoteTap: { note in
                     isScrolling = false
                     store.send(.noteTapped(note))
-                    // Present editor for existing note
-                    pendingNewNote = true
                 },
                 onNoteEdit: { note in
                     isScrolling = false
                     store.send(.editNoteTapped(note))
-                    // Present editor for existing note
-                    pendingNewNote = true
                 },
                 onNoteDelete: { note in
                     isScrolling = false
@@ -68,12 +64,12 @@ struct NoteListScreen: View {
                         HStack {
                             Button(
                                 action: {
-                                    // TODO
+                                    // TODO: Implement sort functionality
                                 }
                             ) {
-                                Image(systemName: "person")
-                                    .imageScale(.large)
-                                    .padding(8)
+                                Image(systemName: "arrow.up.arrow.down")
+                                    .imageScale(.medium)
+                                    .frame(width: 40, height: 40, alignment: .center)
                             }
                             .buttonStyle(.glass)
                             .clipShape(Circle())
@@ -101,8 +97,8 @@ struct NoteListScreen: View {
                                 }
                             ) {
                                 Image(systemName: "plus")
-                                    .imageScale(.large)
-                                    .padding(8)
+                                    .imageScale(.medium)
+                                    .frame(width: 40, height: 40, alignment: .center)
                             }
                             .buttonStyle(.glass)
                             .clipShape(Circle())
@@ -162,15 +158,29 @@ struct NoteListScreen: View {
                     value: isScrolling
                 )
             }
-            // Present editor as sheet: show when editNote is non-nil OR add button tapped (editNote nil new note)
+            // Present detail screen as sheet when note is tapped
             .sheet(isPresented: Binding(
-                get: { store.editNote != nil || pendingNewNote },
+                get: { store.selectedNote != nil && !store.isEditingNote },
                 set: { isPresented in
-                    if !isPresented { pendingNewNote = false; store.send(.dismissEditView) }
+                    if !isPresented { store.send(.dismissNoteView) }
+                }
+            )) {
+                if let note = store.selectedNote {
+                    NoteDetailScreen(note: note) {
+                        // Switch from detail to edit
+                        store.send(.editNoteTapped(note))
+                    }
+                }
+            }
+            // Present editor as sheet: show when editing existing note OR add button tapped (new note)
+            .sheet(isPresented: Binding(
+                get: { (store.selectedNote != nil && store.isEditingNote) || pendingNewNote },
+                set: { isPresented in
+                    if !isPresented { pendingNewNote = false; store.send(.dismissNoteView) }
                 }
             )) {
                 NoteEditScreen(
-                    noteToEdit: store.editNote,
+                    noteToEdit: store.isEditingNote ? store.selectedNote : nil,
                     defaultCategory: store.filterCategory
                 ) { newNote in
                     store.send(.saveNote(newNote))
@@ -184,57 +194,57 @@ struct NoteListScreen: View {
     // Diverse sample notes from all categories with varying counts
     let sampleNotes: [Note] = [
         // like (3)
-        Note(category: .like, title: "Like • Coffee", content: "Flat white"),
-        Note(category: .like, title: "Like • Music", content: "Lo-fi beats"),
-        Note(category: .like, title: "Like • Place", content: "Kyoto"),
+        Note(category: .like, title: "Morning Coffee Ritual", content: "Flat white with oat milk"),
+        Note(category: .like, title: "Lo-fi Jazz Sessions", content: "Perfect for coding"),
+        Note(category: .like, title: "Kyoto in Spring", content: "Cherry blossoms at Philosopher's Path"),
         // dislike (2)
         Note(
             category: .dislike,
-            title: "Dislike • Weather",
-            content: "Humidity"
+            title: "Humid Summer Days",
+            content: "Makes me feel sluggish"
         ),
-        Note(category: .dislike, title: "Dislike • Food", content: "Too spicy"),
+        Note(category: .dislike, title: "Overly Spicy Food", content: "Can't taste the flavors"),
+        // hobby (3)
+        Note(category: .hobby, title: "Street Photography", content: "Candid moments in Tokyo"),
+        Note(category: .hobby, title: "Growing Herbs", content: "Basil and mint on balcony"),
+        Note(category: .hobby, title: "Sci-fi Novels", content: "Currently reading Foundation"),
         // anniversary (2)
         Note(
             category: .anniversary,
-            title: "Anniversary • Wedding",
+            title: "Wedding Day",
             content: "2018-06-17"
         ),
         Note(
             category: .anniversary,
-            title: "Anniversary • Launch",
-            content: "App v1.0"
+            title: "App Launch",
+            content: "First version went live"
         ),
         // family (1)
         Note(
             category: .family,
-            title: "Family • Call",
-            content: "Mom on Sunday"
+            title: "Weekly Call with Mom",
+            content: "Every Sunday at 3pm"
         ),
-        // hobby (3)
-        Note(category: .hobby, title: "Hobby • Photography", content: "Street"),
-        Note(category: .hobby, title: "Hobby • Gardening", content: "Herbs"),
-        Note(category: .hobby, title: "Hobby • Reading", content: "Sci-fi"),
         // school (2)
         Note(
             category: .school,
-            title: "School • Lecture",
-            content: "iOS Patterns"
+            title: "iOS Design Patterns",
+            content: "MVVM vs TCA comparison"
         ),
         Note(
             category: .school,
-            title: "School • Homework",
-            content: "Algorithms"
+            title: "Algorithm Study",
+            content: "Binary search trees"
         ),
         // work (4)
-        Note(category: .work, title: "Work • Standup", content: "10:00"),
+        Note(category: .work, title: "First Day at StartupCo", content: "Nervous but excited. Great team vibes"),
         Note(
             category: .work,
-            title: "Work • Design Review",
-            content: "GlassSnapDial"
+            title: "Shipped Major Feature",
+            content: "Payment system went live. Celebrated with team dinner"
         ),
-        Note(category: .work, title: "Work • Code", content: "Refactor models"),
-        Note(category: .work, title: "Work • Retro", content: "Friday"),
+        Note(category: .work, title: "Mentor's Advice", content: "\"Write code for humans, not machines\""),
+        Note(category: .work, title: "Career Pivot Decision", content: "Left consulting to join product team"),
     ]
 
     return NoteListScreen(

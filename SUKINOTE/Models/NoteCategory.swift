@@ -11,9 +11,9 @@ enum NoteCategory: String, Codable, CaseIterable, Sendable {
     // Explicit raw values to stabilize Codable representation even if case names change
     case like = "like"
     case dislike = "dislike"
+    case hobby = "hobby"
     case anniversary = "anniversary"
     case family = "family"
-    case hobby = "hobby"
     case school = "school"
     case work = "work"
 
@@ -23,12 +23,12 @@ enum NoteCategory: String, Codable, CaseIterable, Sendable {
             return "Like"
         case .dislike:
             return "Dislike"
+        case .hobby:
+            return "Hobby"
         case  .anniversary:
             return "Anniv."
         case .family:
             return "Family"
-        case .hobby:
-            return "Hobby"
         case .school:
             return "School"
         case .work:
@@ -42,12 +42,12 @@ enum NoteCategory: String, Codable, CaseIterable, Sendable {
             return "hand.thumbsup"
         case .dislike:
             return "heart.slash"
+        case .hobby:
+            return "music.note"
         case .anniversary:
             return "birthday.cake"
         case .family:
             return "person.2"
-        case .hobby:
-            return "camera"
         case .school:
             return "graduationcap"
         case .work:
@@ -61,12 +61,12 @@ enum NoteCategory: String, Codable, CaseIterable, Sendable {
             return "hand.thumbsup.fill"
         case .dislike:
             return "heart.slash.fill"
+        case .hobby:
+            return "music.note"
         case .anniversary:
             return "birthday.cake.fill"
         case .family:
             return "person.2.fill"
-        case .hobby:
-            return "camera.fill"
         case .school:
             return "graduationcap.fill"
         case .work:

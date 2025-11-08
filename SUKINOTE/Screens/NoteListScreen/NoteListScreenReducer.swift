@@ -14,7 +14,8 @@ struct NoteListScreenReducer {
     struct State: Equatable {
         var notes: [Note] = []
         var filterCategory: NoteCategory? = nil  // nil means "All"
-        var editNote: Note?
+        var selectedNote: Note?  // For detail/edit view
+        var isEditingNote: Bool = false  // true = edit mode, false = detail mode
     }
 
     enum Action {
@@ -26,7 +27,7 @@ struct NoteListScreenReducer {
         case editNoteTapped(Note)
         case deleteNoteTapped(Note)
         case saveNote(Note)
-        case dismissEditView
+        case dismissNoteView
     }
 
     @Dependency(\.noteStore) var noteStore
@@ -53,11 +54,13 @@ struct NoteListScreenReducer {
                 return .none
 
             case let .noteTapped(note):
-                state.editNote = note
+                state.selectedNote = note
+                state.isEditingNote = false
                 return .none
 
             case let .editNoteTapped(note):
-                state.editNote = note
+                state.selectedNote = note
+                state.isEditingNote = true
                 return .none
 
             case let .deleteNoteTapped(note):
@@ -69,15 +72,17 @@ struct NoteListScreenReducer {
 
             case let .saveNote(note):
                 state.filterCategory = note.category
-                state.editNote = nil
+                state.selectedNote = nil
+                state.isEditingNote = false
                 return .run { send in
                     try await noteStore.saveNote(note)
                     let notes = try await noteStore.fetchNotes()
                     await send(.notesLoaded(notes))
                 }
 
-            case .dismissEditView:
-                state.editNote = nil
+            case .dismissNoteView:
+                state.selectedNote = nil
+                state.isEditingNote = false
                 return .none
             }
         }
