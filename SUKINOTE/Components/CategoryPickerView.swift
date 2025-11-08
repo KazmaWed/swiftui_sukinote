@@ -55,13 +55,7 @@ struct CategoryPickerView: View {
 
         let dialItems: [GlassSnapDialItem] = {
             if showAllOption {
-                let allItem = GlassSnapDialItem(
-                    icon: UIImage(systemName: "line.3.horizontal.decrease.circle") ?? UIImage(),
-                    label: "All",
-                    highlightColor: .systemGray,
-                    highlightedIcon: UIImage(systemName: "line.3.horizontal.decrease.circle.fill")
-                )
-                return [allItem] + categoryItems
+                return [.all] + categoryItems
             } else {
                 return categoryItems
             }

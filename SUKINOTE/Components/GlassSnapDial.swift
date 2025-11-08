@@ -24,6 +24,16 @@ struct GlassSnapDialItem {
         self.highlightColor = highlightColor
         self.highlightedIcon = highlightedIcon
     }
+    
+    // Static factory method for "All" item
+    static var all: GlassSnapDialItem {
+        GlassSnapDialItem(
+            icon: NoteCategory.AllCategory.icon,
+            label: NoteCategory.AllCategory.label,
+            highlightColor: NoteCategory.AllCategory.highlightColor,
+            highlightedIcon: NoteCategory.AllCategory.iconFilled
+        )
+    }
 }
 
 class GlassSnapDial: UIScrollView, UIGestureRecognizerDelegate {
@@ -793,7 +803,7 @@ struct GlassSnapDialView: View {
             
             VStack(spacing: 16) {
                 GlassSnapDialView(
-                    items: items,
+                    items: [GlassSnapDialItem.all] + items,
                     spacing: 0,
                     itemSize: CGSize(width: 52, height: 56),
                     font: .systemFont(ofSize: 12, weight: .semibold),

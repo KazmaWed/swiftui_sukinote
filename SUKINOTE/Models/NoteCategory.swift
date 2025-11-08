@@ -5,6 +5,8 @@
 //  Created by Kazma Wed on 2025/10/26.
 //
 
+import SwiftUI
+
 enum NoteCategory: String, Codable, CaseIterable, Sendable {
     // Explicit raw values to stabilize Codable representation even if case names change
     case like = "like"
@@ -69,6 +71,22 @@ enum NoteCategory: String, Codable, CaseIterable, Sendable {
             return "graduationcap.fill"
         case .work:
             return "briefcase.fill"
+        }
+    }
+    
+    // "All" category properties
+    struct AllCategory {
+        static let iconName = "line.3.horizontal.decrease.circle"
+        static let iconFilledName = "line.3.horizontal.decrease.circle.fill"
+        static let label = "All"
+        static let highlightColor: UIColor = .darkGray
+        
+        static var icon: UIImage {
+            UIImage(systemName: iconName) ?? UIImage()
+        }
+        
+        static var iconFilled: UIImage {
+            UIImage(systemName: iconFilledName) ?? UIImage()
         }
     }
 }
