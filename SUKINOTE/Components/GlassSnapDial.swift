@@ -549,7 +549,7 @@ struct GlassSnapDialView: View {
 
     // Appearance/behavior
     var spacing: CGFloat = 0
-    var itemSize: CGSize = CGSize(width: 48, height: 40)
+    var itemSize: CGSize = CGSize(width: 44, height: 40)
     var font: UIFont = .systemFont(ofSize: 12, weight: .semibold)
     var tintColor: UIColor = .label
     var animationDuration: TimeInterval = 0.3
@@ -624,6 +624,18 @@ struct GlassSnapDialView: View {
         let base = dialContent
             .frame(width: (compactEnabled && isCompact) ? compactWidth : nil)
             .onAppear { isCompact = initialCompact }
+            .mask(
+                LinearGradient(
+                    gradient: Gradient(stops: [
+                        .init(color: .clear, location: 0.0),
+                        .init(color: .white, location: 0.15),
+                        .init(color: .white, location: 0.85),
+                        .init(color: .clear, location: 1.0)
+                    ]),
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
 
         // Replace previous experimental Button(.glass) overlay (which could appear flat/white) with
         // a consistent reusable glass surface (material + stroke + highlight) for visual parity.
@@ -761,7 +773,7 @@ struct GlassSnapDialView: View {
                     onTap: { _ in }
                 )
                 .frame(height: 64)
-                .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: 5)
+                .elevatedShadow()
 
                 Text("Selected: \(selected)  •  Last Ended: \(lastEnded)")
                     .font(.footnote)

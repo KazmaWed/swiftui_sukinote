@@ -15,6 +15,10 @@ struct NoteListScreen: View {
     @State private var isScrolling: Bool = false
 
     var body: some View {
+        let animationDuration: Double = 0.3
+        let highlightAnimationDuration: Double = 0.1
+        let bottomPadding: Double = 16
+        
         NavigationStack {
             NotesListView(
                 notes: {
@@ -37,9 +41,9 @@ struct NoteListScreen: View {
                     isScrolling = false
                     store.send(.deleteNoteTapped(note))
                 },
-                bottomPadding: fabHeight + 16
+                bottomPadding: fabHeight + bottomPadding
             )
-            .animation(.easeInOut(duration: 0.3), value: store.filterCategory)
+            .animation(.easeInOut(duration: animationDuration), value: store.filterCategory)
             .gesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { _ in
@@ -50,8 +54,6 @@ struct NoteListScreen: View {
                 store.send(.onAppear)
             }
             .overlay(alignment: .bottom) {
-                let animationDuration: Double = 0.3
-                let highlightAnimationDuration: Double = 0.1
                 
                 ZStack {
                     if !isScrolling {
@@ -63,10 +65,11 @@ struct NoteListScreen: View {
                             ) {
                                 Image(systemName: "person")
                                     .imageScale(.large)
-                                    .padding(.vertical, 10)
-                                    .padding(.horizontal, 4)
+                                    .padding(8)
                             }
                             .buttonStyle(.glass)
+                            .clipShape(Circle())
+                            .elevatedShadow()
                             .background(
                                 GeometryReader { geometry in
                                     Color.clear
@@ -88,10 +91,11 @@ struct NoteListScreen: View {
                             ) {
                                 Image(systemName: "plus")
                                     .imageScale(.large)
-                                    .padding(.vertical, 10)
-                                    .padding(.horizontal, 4)
+                                    .padding(8)
                             }
                             .buttonStyle(.glass)
+                            .clipShape(Circle())
+                            .elevatedShadow()
                             .background(
                                 GeometryReader { geometry in
                                     Color.clear
@@ -105,7 +109,7 @@ struct NoteListScreen: View {
                         .transition(.opacity.combined(with: .scale))
                     }
 
-                    HStack(spacing: 12) {
+                    HStack(spacing: 4) {
                         if !isScrolling {
                             Spacer()
                                 .frame(width: fabWidth)
@@ -129,12 +133,7 @@ struct NoteListScreen: View {
                                 store.send(.categorySelected(category))
                             }
                         )
-                        .shadow(
-                            color: .black.opacity(0.1),
-                            radius: 10,
-                            x: 0,
-                            y: 5
-                        )
+                        .elevatedShadow()
                         .frame(maxWidth: isScrolling ? .infinity : nil)
 
                         if !isScrolling {

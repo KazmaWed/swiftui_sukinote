@@ -3,19 +3,20 @@
 //
 //  UI-related extensions for NoteCategory (colors, etc.)
 //
-import UIKit
+
 import SwiftUI
+import UIKit
 
 extension NoteCategory {
     var highlightUIColor: UIColor {
         switch self {
         case .like: return .systemPink
-        case .dislike: return .systemPurple
+        case .dislike: return .systemBlue
         case .anniversary: return .systemOrange
-        case .family: return .systemBlue
+        case .family: return .systemPurple
         case .hobby: return .systemTeal
         case .school: return .systemIndigo
-        case .work: return .systemGray
+        case .work: return .systemBrown
         }
     }
 
