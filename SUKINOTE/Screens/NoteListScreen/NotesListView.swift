@@ -47,11 +47,23 @@ struct NotesListView: View {
 #Preview {
     NotesListView(
         notes: [
-            Note(
-                category: .like,
-                title: "Sample Note",
-                content: "This is a sample content"
-            )
+            // like (2)
+            Note(category: .like, title: "Like • Coffee", content: "Flat white"),
+            Note(category: .like, title: "Like • Music", content: "Lo-fi beats"),
+            // dislike (1)
+            Note(category: .dislike, title: "Dislike • Weather", content: "Humidity"),
+            // anniversary (1)
+            Note(category: .anniversary, title: "Anniversary • Wedding", content: "2018-06-17"),
+            // family (1)
+            Note(category: .family, title: "Family • Call", content: "Mom on Sunday"),
+            // hobby (2)
+            Note(category: .hobby, title: "Hobby • Photography", content: "Street"),
+            Note(category: .hobby, title: "Hobby • Reading", content: "Sci-fi"),
+            // school (1)
+            Note(category: .school, title: "School • Lecture", content: "iOS Patterns"),
+            // work (2)
+            Note(category: .work, title: "Work • Design Review", content: "GlassSnapDial"),
+            Note(category: .work, title: "Work • Retro", content: "Friday")
         ],
         onNoteTap: { _ in },
         onNoteEdit: { _ in },

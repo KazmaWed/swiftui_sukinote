@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct CategoryPickerView: View {
     let selectedCategory: NoteCategory
@@ -15,65 +16,52 @@ struct CategoryPickerView: View {
     var onScrollBegin: (() -> Void)? = nil
     var onScrollEnd: (() -> Void)? = nil
 
-    @State private var centeredIndex: Int = 0
+    @State private var selectedIndex: Int = 0
 
     private var initialIndex: Int {
         NoteCategory.allCases.firstIndex(of: selectedCategory) ?? 0
     }
 
     var body: some View {
-        let items: [NoteCategory] = NoteCategory.allCases
+        // Build GlassSnapDial items from NoteCategory
+        let categories: [NoteCategory] = NoteCategory.allCases
+        let dialItems: [GlassSnapDialItem] = categories.map { cat in
+            let base = UIImage(systemName: cat.icon) ?? UIImage()
+            let filled = UIImage(systemName: cat.iconFilled)
+            return GlassSnapDialItem(
+                icon: base,
+                label: cat.displayName,
+                highlightColor: cat.highlightUIColor,
+                highlightedIcon: filled
+            )
+        }
 
-        SnapDial(
-            items.indices,
+        GlassSnapDialView(
+            items: dialItems,
             spacing: 0,
-            distribution: .fill,
+            itemSize: CGSize(width: 60, height: 50),
+            font: .systemFont(ofSize: 12, weight: .semibold),
+            tintColor: UIColor.label,
             animationDuration: animationDuration,
-            centeredIndex: $centeredIndex,
+            scrollEndDelay: 0.8,
+            hapticsEnabled: true,
+            compactEnabled: false,
+            initialCompact: false,
+            compactWidth: 240,
+            collapseDelayAfterTap: 1.5,
+            selected: $selectedIndex,
             initialIndex: initialIndex,
-            onScrollBegin: {
-                onScrollBegin?()
-            },
-            onScrollEnd: { index in
-                let category = NoteCategory.allCases[index]
+            onScrollBegin: { onScrollBegin?() },
+            onScrollEnd: { idx in
+                let category = NoteCategory.allCases[idx]
                 onCategorySelected(category)
                 onScrollEnd?()
             },
-            onTap: { index in
-                let category = NoteCategory.allCases[index]
+            onTap: { idx in
+                let category = NoteCategory.allCases[idx]
                 onCategorySelected(category)
             }
-        ) { index in
-            let category = items[index]
-            let isSelected = index == centeredIndex
-
-            VStack(spacing: 0) {
-                Image(
-                    systemName: isSelected
-                        ? category.iconFilled
-                        : category.icon
-                )
-                .imageScale(.medium)
-                .frame(height: 24)
-                Text(category.displayName)
-                    .font(.caption)
-                    .fontWeight(.semibold)
-            }
-            .frame(width: 60, height: 50)
-            .background(
-                isSelected
-                    ? Color.accentColor
-                    : Color.clear
-            )
-            .foregroundStyle(
-                isSelected
-                    ? Color.white
-                    : Color(.black)
-            )
-            .cornerRadius(16)
-            .contentShape(Rectangle())
-            .animation(.easeInOut(duration: highlightAnimationDuration), value: centeredIndex)
-        }
+        )
         .frame(height: 60)
     }
 }

@@ -6,7 +6,14 @@
 //
 
 enum NoteCategory: String, Codable, CaseIterable, Sendable {
-    case like, dislike, anniversary, family, hobby, school, work
+    // Explicit raw values to stabilize Codable representation even if case names change
+    case like = "like"
+    case dislike = "dislike"
+    case anniversary = "anniversary"
+    case family = "family"
+    case hobby = "hobby"
+    case school = "school"
+    case work = "work"
 
     var displayName: String {
         switch self {

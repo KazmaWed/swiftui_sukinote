@@ -148,20 +148,49 @@ struct NoteListScreen: View {
 }
 
 #Preview {
-    NoteListScreen(
+    // Diverse sample notes from all categories with varying counts
+    let sampleNotes: [Note] = [
+        // like (3)
+        Note(category: .like, title: "Like • Coffee", content: "Flat white"),
+        Note(category: .like, title: "Like • Music", content: "Lo-fi beats"),
+        Note(category: .like, title: "Like • Place", content: "Kyoto"),
+        // dislike (2)
+        Note(category: .dislike, title: "Dislike • Weather", content: "Humidity"),
+        Note(category: .dislike, title: "Dislike • Food", content: "Too spicy"),
+        // anniversary (2)
+        Note(category: .anniversary, title: "Anniversary • Wedding", content: "2018-06-17"),
+        Note(category: .anniversary, title: "Anniversary • Launch", content: "App v1.0"),
+        // family (1)
+        Note(category: .family, title: "Family • Call", content: "Mom on Sunday"),
+        // hobby (3)
+        Note(category: .hobby, title: "Hobby • Photography", content: "Street"),
+        Note(category: .hobby, title: "Hobby • Gardening", content: "Herbs"),
+        Note(category: .hobby, title: "Hobby • Reading", content: "Sci-fi"),
+        // school (2)
+        Note(category: .school, title: "School • Lecture", content: "iOS Patterns"),
+        Note(category: .school, title: "School • Homework", content: "Algorithms"),
+        // work (4)
+        Note(category: .work, title: "Work • Standup", content: "10:00"),
+        Note(category: .work, title: "Work • Design Review", content: "GlassSnapDial"),
+        Note(category: .work, title: "Work • Code", content: "Refactor models"),
+        Note(category: .work, title: "Work • Retro", content: "Friday")
+    ]
+
+    return NoteListScreen(
         store: Store(
             initialState: NoteListScreenReducer.State(
-                notes: [
-                    Note(
-                        category: .like,
-                        title: "Sample Note",
-                        content: "This is a sample content"
-                    )
-                ],
+                notes: sampleNotes,
                 filterCategory: .like
             )
         ) {
             NoteListScreenReducer()
+        } withDependencies: { values in
+            // Override NoteStore for previews to return the sample notes
+            values.noteStore = NoteStore(
+                fetchNotes: { sampleNotes },
+                saveNote: { _ in },
+                deleteNote: { _ in }
+            )
         }
     )
 }
