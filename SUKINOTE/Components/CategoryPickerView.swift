@@ -27,11 +27,16 @@ struct CategoryPickerView: View {
 
     private var initialIndex: Int {
         if let category = selectedCategory {
-            // +1 if "All" is shown (because "All" is at index 0)
             let offset = showAllOption ? 1 : 0
             return (NoteCategory.allCases.firstIndex(of: category) ?? 0) + offset
-        } else {
-            return 0  // "All" is selected (only valid when showAllOption is true)
+        } else { return 0 }
+    }
+
+    // Keep selectedIndex in sync with external selectedCategory changes (e.g. after Save)
+    private func syncSelectedIndex() {
+        let newIndex = initialIndex
+        if newIndex != selectedIndex {
+            selectedIndex = newIndex
         }
     }
 
@@ -115,6 +120,11 @@ struct CategoryPickerView: View {
             }
         )
         .frame(height: 60)
+        .onChange(of: selectedCategory) { _, _ in
+            // When external selection changes, adjust dial position
+            syncSelectedIndex()
+        }
+        .onAppear { syncSelectedIndex() }
     }
 }
 

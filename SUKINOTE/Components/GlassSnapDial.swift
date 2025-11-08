@@ -30,6 +30,7 @@ class GlassSnapDial: UIScrollView, UIGestureRecognizerDelegate {
     // Delayed onScrollEnd invocation
     var scrollEndDelay: TimeInterval = 0.8
     private var scrollEndWorkItem: DispatchWorkItem?
+    private var isProgrammaticScroll: Bool = false
 
     // MARK: - Properties
     private let contentStackView: UIStackView = {
@@ -326,6 +327,7 @@ class GlassSnapDial: UIScrollView, UIGestureRecognizerDelegate {
         let targetView = contentStackView.arrangedSubviews[index]
         let targetCenterX = targetView.frame.midX
         let targetOffsetX = targetCenterX - bounds.width / 2
+        isProgrammaticScroll = true
         if animated {
             UIView.animate(
                 withDuration: animationDuration,
@@ -336,18 +338,12 @@ class GlassSnapDial: UIScrollView, UIGestureRecognizerDelegate {
                 },
                 completion: { [weak self] _ in
                     guard let self = self else { return }
-                    let workItem = DispatchWorkItem { [weak self] in
-                        self?.onScrollEnd?(index)
-                    }
-                    self.scrollEndWorkItem = workItem
-                    DispatchQueue.main.asyncAfter(
-                        deadline: .now() + self.scrollEndDelay,
-                        execute: workItem
-                    )
+                    self.isProgrammaticScroll = false
                 }
             )
         } else {
             contentOffset.x = targetOffsetX
+            isProgrammaticScroll = false
         }
     }
 
@@ -466,6 +462,7 @@ extension GlassSnapDial: UIScrollViewDelegate {
     }
 
     func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
+        guard !isProgrammaticScroll else { return }
         guard !contentStackView.arrangedSubviews.isEmpty else { return }
         let centerX = contentOffset.x + bounds.width / 2
         var closestIndex = 0
@@ -494,6 +491,7 @@ extension GlassSnapDial: UIScrollViewDelegate {
         willDecelerate decelerate: Bool
     ) {
         if !decelerate {
+            guard !isProgrammaticScroll else { return }
             guard !contentStackView.arrangedSubviews.isEmpty else { return }
             let centerX = contentOffset.x + bounds.width / 2
             var closestIndex = 0
@@ -690,6 +688,20 @@ struct GlassSnapDialView: View {
         var onTap: ((Int) -> Void)?
         var onCenteredItemChanged: ((Int) -> Void)?
 
+        class Coordinator {
+            struct Config: Equatable {
+                var itemsCount: Int
+                var spacing: CGFloat
+                var itemSize: CGSize
+                var fontPoint: CGFloat
+                var tint: UIColor
+            }
+            var lastSelected: Int?
+            var lastConfig: Config?
+        }
+
+        func makeCoordinator() -> Coordinator { Coordinator() }
+
         func makeUIView(context: Context) -> GlassSnapDial {
             let dial = GlassSnapDial()
             dial.animationDuration = animationDuration
@@ -709,6 +721,14 @@ struct GlassSnapDialView: View {
             dial.setItems(items, itemSize: itemSize, font: font, tintColor: tintColor, spacing: spacing)
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 dial.scrollToIndex(self.initialIndex, animated: false)
+                context.coordinator.lastSelected = self.initialIndex
+                context.coordinator.lastConfig = .init(
+                    itemsCount: self.items.count,
+                    spacing: self.spacing,
+                    itemSize: self.itemSize,
+                    fontPoint: self.font.pointSize,
+                    tint: self.tintColor
+                )
             }
             return dial
         }
@@ -717,7 +737,22 @@ struct GlassSnapDialView: View {
             uiView.animationDuration = animationDuration
             uiView.scrollEndDelay = scrollEndDelay
             uiView.hapticsEnabled = hapticsEnabled
-            uiView.setItems(items, itemSize: itemSize, font: font, tintColor: tintColor, spacing: spacing)
+            let newConfig = Coordinator.Config(
+                itemsCount: items.count,
+                spacing: spacing,
+                itemSize: itemSize,
+                fontPoint: font.pointSize,
+                tint: tintColor
+            )
+            if context.coordinator.lastConfig != newConfig {
+                uiView.setItems(items, itemSize: itemSize, font: font, tintColor: tintColor, spacing: spacing)
+                context.coordinator.lastConfig = newConfig
+            }
+            // If SwiftUI binding 'selected' changed externally (e.g., save -> filter update), scroll to match
+            if context.coordinator.lastSelected != selected {
+                uiView.scrollToIndex(selected, animated: true)
+                context.coordinator.lastSelected = selected
+            }
         }
     }
 }
