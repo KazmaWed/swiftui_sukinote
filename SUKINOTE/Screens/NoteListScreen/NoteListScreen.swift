@@ -16,7 +16,14 @@ struct NoteListScreen: View {
     var body: some View {
         NavigationStack {
             NotesListView(
-                notes: store.notes,
+                notes: {
+                    if let category = store.filterCategory {
+                        return store.notes.filter { $0.category == category }
+                    } else {
+                        // "All" is selected - show all notes
+                        return store.notes
+                    }
+                }(),
                 onNoteTap: { note in
                     store.send(.noteTapped(note))
                 },
@@ -178,7 +185,7 @@ struct NoteListScreen: View {
         store: Store(
             initialState: NoteListScreenReducer.State(
                 notes: sampleNotes,
-                filterCategory: .like
+                filterCategory: nil  // "All" selected by default
             )
         ) {
             NoteListScreenReducer()

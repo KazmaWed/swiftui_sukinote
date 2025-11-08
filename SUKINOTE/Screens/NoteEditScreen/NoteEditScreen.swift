@@ -25,6 +25,7 @@ struct NoteEditScreen: View {
         onSave: @escaping (Note) -> Void
     ) {
         self.noteToEdit = noteToEdit
+        self.defaultCategory = defaultCategory
         self.onSave = onSave
 
         // Initialize with existing note's values if available, otherwise use default values
@@ -115,7 +116,12 @@ struct NoteEditScreen: View {
         Text("Category")
         CategoryPickerView(
             selectedCategory: category,
-            onCategorySelected: { selected in category = selected }
+            onCategorySelected: { selected in
+                if let selected = selected {
+                    category = selected
+                }
+            },
+            showAllOption: false
         )
         .padding(.vertical, 4)
         .background(Color.white)

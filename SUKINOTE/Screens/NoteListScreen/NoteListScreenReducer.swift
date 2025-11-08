@@ -13,7 +13,7 @@ struct NoteListScreenReducer {
     @ObservableState
     struct State: Equatable {
         var notes: [Note] = []
-        var filterCategory: NoteCategory = .like
+        var filterCategory: NoteCategory? = nil  // nil means "All"
         var editNote: Note?
     }
 
@@ -21,7 +21,7 @@ struct NoteListScreenReducer {
         case onAppear
         case notesLoaded([Note])
         case addNoteButtonTapped
-        case categorySelected(NoteCategory)
+        case categorySelected(NoteCategory?)  // nil means "All"
         case noteTapped(Note)
         case editNoteTapped(Note)
         case deleteNoteTapped(Note)
@@ -45,9 +45,9 @@ struct NoteListScreenReducer {
                 return .none
 
             case .addNoteButtonTapped:
-                // Create a placeholder note with the current filter category
+                // Create a placeholder note with the current filter category (or .like if "All" is selected)
                 state.editNote = Note(
-                    category: state.filterCategory,
+                    category: state.filterCategory ?? .like,
                     title: "",
                     content: ""
                 )
