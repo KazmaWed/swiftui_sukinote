@@ -109,10 +109,8 @@ struct NoteListScreen: View {
                                 isScrolling = false
                             }
                         )
-                        .background(Color(.white))
-                        .cornerRadius(100)
                         .shadow(
-                            color: .black.opacity(0.15),
+                            color: .black.opacity(0.1),
                             radius: 10,
                             x: 0,
                             y: 5

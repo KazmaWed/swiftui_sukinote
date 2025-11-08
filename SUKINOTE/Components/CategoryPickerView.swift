@@ -1,6 +1,11 @@
-//
 //  CategoryPickerView.swift
 //  SUKINOTE
+//
+//  Created by Kazma Wed on 2025/10/26.
+//
+
+import SwiftUI
+import UIKit
 //
 //  Created by Kazma Wed on 2025/10/26.
 //
@@ -41,7 +46,6 @@ struct CategoryPickerView: View {
             spacing: 0,
             itemSize: CGSize(width: 60, height: 50),
             font: .systemFont(ofSize: 12, weight: .semibold),
-            tintColor: UIColor.label,
             animationDuration: animationDuration,
             scrollEndDelay: 0.8,
             hapticsEnabled: true,
@@ -49,6 +53,8 @@ struct CategoryPickerView: View {
             initialCompact: false,
             compactWidth: 240,
             collapseDelayAfterTap: 1.5,
+            useButtonGlassBackground: true,
+            buttonCornerRadius: 1000,
             selected: $selectedIndex,
             initialIndex: initialIndex,
             onScrollBegin: { onScrollBegin?() },

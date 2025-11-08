@@ -384,6 +384,19 @@ class GlassSnapDial: UIScrollView, UIGestureRecognizerDelegate {
 
 // MARK: - Selection Styling
 extension GlassSnapDial {
+    /// Blend a color with white to create a lighter, opaque version
+    private func blendWithWhite(_ color: UIColor, amount: CGFloat) -> UIColor {
+        var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
+        color.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+
+        // Blend with white
+        let blendedRed = red + (1.0 - red) * amount
+        let blendedGreen = green + (1.0 - green) * amount
+        let blendedBlue = blue + (1.0 - blue) * amount
+
+        return UIColor(red: blendedRed, green: blendedGreen, blue: blendedBlue, alpha: 1.0)
+    }
+
     fileprivate func applySelectionStyles(animated: Bool) {
         guard !itemComponents.isEmpty else { return }
         let changes = {
@@ -391,11 +404,10 @@ extension GlassSnapDial {
                 let selected = index == self.currentCenteredIndex
                 // Keep highlight (background container) height constant regardless of selection
                 comp.heightConstraint.constant = self.deselectedItemHeight
-                // Selected background uses per-item highlightColor with the same alpha as selectedBackgroundColor
                 if selected {
-                    let alpha = self.selectedBackgroundColor.cgColor.alpha
-                    comp.container.backgroundColor = comp.highlightColor
-                        .withAlphaComponent(alpha > 0 ? alpha : 1.0)
+                    // Mix highlightColor with white to create a light, opaque background
+                    let lightTint = self.blendWithWhite(comp.highlightColor, amount: 0.85)
+                    comp.container.backgroundColor = lightTint
                 } else {
                     comp.container.backgroundColor =
                         self.deselectedBackgroundColor
@@ -550,6 +562,10 @@ struct GlassSnapDialView: View {
     var compactWidth: CGFloat = 240
     var collapseDelayAfterTap: TimeInterval = 1.5
 
+    // Optional: render with Button(.glass) style as a non-interactive background
+    var useButtonGlassBackground: Bool = false
+    var buttonCornerRadius: CGFloat = 12
+
     // State
     @Binding var selected: Int
     var initialIndex: Int = 0
@@ -562,7 +578,7 @@ struct GlassSnapDialView: View {
     @State private var isCompact: Bool = true
     @State private var collapseTask: DispatchWorkItem? = nil
 
-    var body: some View {
+    private var dialContent: some View {
         InnerRepresentable(
             items: items,
             spacing: spacing,
@@ -575,47 +591,67 @@ struct GlassSnapDialView: View {
             selected: $selected,
             initialIndex: initialIndex,
             onScrollBegin: {
-                // Expand on scroll begin and cancel pending collapse
                 if compactEnabled {
                     collapseTask?.cancel()
-                    withAnimation(.easeOut(duration: animationDuration)) {
-                        isCompact = false
-                    }
+                    withAnimation(.easeOut(duration: animationDuration)) { isCompact = false }
                 }
                 onScrollBegin?()
             },
             onScrollEnd: { idx in
-                // Collapse on scroll end
                 if compactEnabled {
-                    withAnimation(.easeOut(duration: animationDuration)) {
-                        isCompact = true
-                    }
+                    withAnimation(.easeOut(duration: animationDuration)) { isCompact = true }
                 }
                 onScrollEnd?(idx)
             },
             onTap: { idx in
-                // Expand then schedule auto-collapse after inactivity
                 if compactEnabled {
                     collapseTask?.cancel()
-                    withAnimation(.easeOut(duration: animationDuration)) {
-                        isCompact = false
-                    }
+                    withAnimation(.easeOut(duration: animationDuration)) { isCompact = false }
                     let task = DispatchWorkItem {
-                        withAnimation(.easeOut(duration: animationDuration)) {
-                            isCompact = true
-                        }
+                        withAnimation(.easeOut(duration: animationDuration)) { isCompact = true }
                     }
                     collapseTask = task
-                    DispatchQueue.main.asyncAfter(
-                        deadline: .now() + collapseDelayAfterTap,
-                        execute: task
-                    )
+                    DispatchQueue.main.asyncAfter(deadline: .now() + collapseDelayAfterTap, execute: task)
                 }
                 onTap?(idx)
             }
         )
-        .frame(width: (compactEnabled && isCompact) ? compactWidth : nil)
-        .onAppear { isCompact = initialCompact }
+    }
+
+    var body: some View {
+        let base = dialContent
+            .frame(width: (compactEnabled && isCompact) ? compactWidth : nil)
+            .onAppear { isCompact = initialCompact }
+
+        // Replace previous experimental Button(.glass) overlay (which could appear flat/white) with
+        // a consistent reusable glass surface (material + stroke + highlight) for visual parity.
+        if useButtonGlassBackground {
+            let effectiveRadius = min(buttonCornerRadius, max(itemSize.height / 2, 4))
+            Group {
+                if #available(iOS 18.0, *) {
+                    base.background {
+                        Button(action: {}) { Color.clear }
+                            .buttonBorderShape(.capsule)
+                            .buttonStyle(.glass)
+                            .allowsHitTesting(false)
+                            .clipShape(Capsule())
+                    }
+                } else {
+                    base.glassSurface(
+                        cornerRadius: effectiveRadius,
+                        material: .thinMaterial,
+                        strokeOpacity: 0.34,
+                        highlightOpacity: 0.28,
+                        diagonalSheenOpacity: 0.16,
+                        radialSheenOpacity: 0.13,
+                        baseLuminanceOpacity: 0.12
+                    )
+                    .clipShape(Capsule())
+                }
+            }
+        } else {
+            base
+        }
     }
 
     // Inner UIViewRepresentable bridge
@@ -641,34 +677,13 @@ struct GlassSnapDialView: View {
             dial.hapticsEnabled = hapticsEnabled
 
             dial.onCenteredItemChanged = { index in
-                DispatchQueue.main.async {
-                    self.selected = index
-                }
+                DispatchQueue.main.async { self.selected = index }
             }
-            dial.onScrollBegin = {
-                DispatchQueue.main.async {
-                    self.onScrollBegin?()
-                }
-            }
-            dial.onScrollEnd = { index in
-                DispatchQueue.main.async {
-                    self.onScrollEnd?(index)
-                }
-            }
-            dial.onTap = { index in
-                DispatchQueue.main.async {
-                    self.onTap?(index)
-                    self.selected = index
-                }
-            }
+            dial.onScrollBegin = { DispatchQueue.main.async { self.onScrollBegin?() } }
+            dial.onScrollEnd = { index in DispatchQueue.main.async { self.onScrollEnd?(index) } }
+            dial.onTap = { index in DispatchQueue.main.async { self.onTap?(index); self.selected = index } }
 
-            dial.setItems(
-                items,
-                itemSize: itemSize,
-                font: font,
-                tintColor: tintColor,
-                spacing: spacing
-            )
+            dial.setItems(items, itemSize: itemSize, font: font, tintColor: tintColor, spacing: spacing)
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 dial.scrollToIndex(self.initialIndex, animated: false)
             }
@@ -679,13 +694,7 @@ struct GlassSnapDialView: View {
             uiView.animationDuration = animationDuration
             uiView.scrollEndDelay = scrollEndDelay
             uiView.hapticsEnabled = hapticsEnabled
-            uiView.setItems(
-                items,
-                itemSize: itemSize,
-                font: font,
-                tintColor: tintColor,
-                spacing: spacing
-            )
+            uiView.setItems(items, itemSize: itemSize, font: font, tintColor: tintColor, spacing: spacing)
         }
     }
 }
@@ -738,6 +747,7 @@ struct GlassSnapDialView: View {
                     initialCompact: true,
                     compactWidth: 240,
                     collapseDelayAfterTap: 1.5,
+                    useButtonGlassBackground: true,
                     selected: $selected,
                     initialIndex: 0,
                     onScrollBegin: {},
@@ -745,10 +755,6 @@ struct GlassSnapDialView: View {
                     onTap: { _ in }
                 )
                 .frame(height: 64)
-                .background(
-                    .ultraThinMaterial,
-                    in: RoundedRectangle(cornerRadius: 12)
-                )
                 .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: 5)
 
                 Text("Selected: \(selected)  •  Last Ended: \(lastEnded)")
