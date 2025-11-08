@@ -621,20 +621,25 @@ struct GlassSnapDialView: View {
     }
 
     var body: some View {
+        let fadeWidth: CGFloat = 20  // Edge fade width in pixels
+
         let base = dialContent
             .frame(width: (compactEnabled && isCompact) ? compactWidth : nil)
             .onAppear { isCompact = initialCompact }
             .mask(
-                LinearGradient(
-                    gradient: Gradient(stops: [
-                        .init(color: .clear, location: 0.0),
-                        .init(color: .white, location: 0.15),
-                        .init(color: .white, location: 0.85),
-                        .init(color: .clear, location: 1.0)
-                    ]),
-                    startPoint: .leading,
-                    endPoint: .trailing
-                )
+                GeometryReader { geometry in
+                    let fadeLocation = fadeWidth / geometry.size.width
+                    LinearGradient(
+                        gradient: Gradient(stops: [
+                            .init(color: .clear, location: 0.0),
+                            .init(color: .white, location: fadeLocation),
+                            .init(color: .white, location: 1.0 - fadeLocation),
+                            .init(color: .clear, location: 1.0)
+                        ]),
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                }
             )
 
         // Replace previous experimental Button(.glass) overlay (which could appear flat/white) with
