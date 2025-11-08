@@ -34,6 +34,7 @@ struct NoteListScreen: View {
                     store.send(.deleteNoteTapped(note))
                 }
             )
+            .animation(.easeInOut(duration: 0.3), value: store.filterCategory)
             .onAppear {
                 store.send(.onAppear)
             }

@@ -25,6 +25,7 @@ struct NotesListView: View {
                 alignment: .center
             )
             .background(Color(.systemGroupedBackground))
+            .transition(.opacity)
         } else {
             List(notes, id: \.id) { note in
                 NoteListItemView(
@@ -39,7 +40,14 @@ struct NotesListView: View {
                         onNoteDelete(note)
                     }
                 )
+                .transition(
+                    .asymmetric(
+                        insertion: .scale(scale: 0.8).combined(with: .opacity),
+                        removal: .scale(scale: 0.8).combined(with: .opacity)
+                    )
+                )
             }
+            .transition(.opacity)
         }
     }
 }
