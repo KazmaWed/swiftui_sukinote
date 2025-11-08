@@ -31,8 +31,8 @@ struct NoteEditScreen: View {
         // Initialize with existing note's values if available, otherwise use default values
         _category = State(
             initialValue: noteToEdit?.category
-            ?? defaultCategory
-            ?? .like
+                ?? defaultCategory
+                ?? .like
         )
         _title = State(initialValue: noteToEdit?.title ?? "")
         _content = State(initialValue: noteToEdit?.content ?? "")
@@ -94,6 +94,8 @@ struct NoteEditScreen: View {
 
     var body: some View {
         VStack(alignment: .leading) {
+            headerBar
+            Spacer().frame(height: 12)
             categorySection
             Spacer().frame(height: 16)
             textFieldsSection
@@ -109,6 +111,33 @@ struct NoteEditScreen: View {
         )
         .padding()
         .background(Color(.systemGroupedBackground))
+    }
+
+    @ViewBuilder
+    private var headerBar: some View {
+        ZStack {
+            // Centered title
+            Text(noteToEdit == nil ? "New Note" : "Edit Note")
+                .font(.title3)
+                .fontWeight(.semibold)
+                .frame(maxWidth: .infinity, alignment: .center)
+
+            // Trailing close button; empty spacer on the left is implicitly handled by ZStack
+            HStack {
+                Spacer()
+                Button(
+                    action: { dismiss() }
+                ) {
+                    Image(systemName: "xmark")
+                        .imageScale(.medium)
+                        .accessibilityLabel("Cancel")
+                }
+                .buttonStyle(.plain)
+                .frame(width: 40, height: 40)
+                .clipShape(Circle())
+            }
+        }
+        .frame(height: 44)
     }
 
     @ViewBuilder
@@ -162,6 +191,8 @@ struct NoteEditScreen: View {
                 .frame(maxWidth: .infinity)
                 .padding()
         }
+        .buttonStyle(.borderless)
+        .frame(height: 48)
     }
 }
 

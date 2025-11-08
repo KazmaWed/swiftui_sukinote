@@ -5,20 +5,21 @@
 //  Created by Kazma Wed on 2025/10/24.
 //
 
-import SwiftUI
 import ComposableArchitecture
+import SwiftUI
 
 struct NoteListScreen: View {
     @Bindable var store: StoreOf<NoteListScreenReducer>
     @State private var fabWidth: CGFloat = 0
     @State private var fabHeight: CGFloat = 0
     @State private var isScrolling: Bool = false
+    @State private var pendingNewNote: Bool = false
 
     var body: some View {
         let animationDuration: Double = 0.3
         let highlightAnimationDuration: Double = 0.1
         let bottomPadding: Double = 16
-        
+
         NavigationStack {
             NotesListView(
                 notes: {
@@ -32,10 +33,14 @@ struct NoteListScreen: View {
                 onNoteTap: { note in
                     isScrolling = false
                     store.send(.noteTapped(note))
+                    // Present editor for existing note
+                    pendingNewNote = true
                 },
                 onNoteEdit: { note in
                     isScrolling = false
                     store.send(.editNoteTapped(note))
+                    // Present editor for existing note
+                    pendingNewNote = true
                 },
                 onNoteDelete: { note in
                     isScrolling = false
@@ -43,7 +48,10 @@ struct NoteListScreen: View {
                 },
                 bottomPadding: fabHeight + bottomPadding
             )
-            .animation(.easeInOut(duration: animationDuration), value: store.filterCategory)
+            .animation(
+                .easeInOut(duration: animationDuration),
+                value: store.filterCategory
+            )
             .gesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { _ in
@@ -54,7 +62,7 @@ struct NoteListScreen: View {
                 store.send(.onAppear)
             }
             .overlay(alignment: .bottom) {
-                
+
                 ZStack {
                     if !isScrolling {
                         HStack {
@@ -76,9 +84,11 @@ struct NoteListScreen: View {
                                         .onAppear {
                                             fabWidth = geometry.size.width
                                         }
-                                        .onChange(of: geometry.size.width) { _, newWidth in
-                                        fabWidth = newWidth
-                                    }
+                                        .onChange(of: geometry.size.width) {
+                                            _,
+                                            newWidth in
+                                            fabWidth = newWidth
+                                        }
                                 }
                             )
 
@@ -86,7 +96,8 @@ struct NoteListScreen: View {
 
                             Button(
                                 action: {
-                                    store.send(.addNoteButtonTapped)
+                                    // New note: present sheet without creating a placeholder in state
+                                    pendingNewNote = true
                                 }
                             ) {
                                 Image(systemName: "plus")
@@ -122,7 +133,8 @@ struct NoteListScreen: View {
                                 store.send(.categorySelected(category))
                             },
                             animationDuration: animationDuration,
-                            highlightAnimationDuration: highlightAnimationDuration,
+                            highlightAnimationDuration:
+                                highlightAnimationDuration,
                             onScrollBegin: {
                                 isScrolling = true
                             },
@@ -145,16 +157,20 @@ struct NoteListScreen: View {
                     .padding(.horizontal, 0)
                 }
                 .padding()
-                .animation(.spring(response: animationDuration), value: isScrolling)
-            }
-            .navigationDestination(
-                item: Binding(
-                    get: { store.editNote },
-                    set: { if $0 == nil { store.send(.dismissEditView) } }
+                .animation(
+                    .spring(response: animationDuration),
+                    value: isScrolling
                 )
-            ) { note in
+            }
+            // Present editor as sheet: show when editNote is non-nil OR add button tapped (editNote nil new note)
+            .sheet(isPresented: Binding(
+                get: { store.editNote != nil || pendingNewNote },
+                set: { isPresented in
+                    if !isPresented { pendingNewNote = false; store.send(.dismissEditView) }
+                }
+            )) {
                 NoteEditScreen(
-                    noteToEdit: note,
+                    noteToEdit: store.editNote,
                     defaultCategory: store.filterCategory
                 ) { newNote in
                     store.send(.saveNote(newNote))
@@ -172,25 +188,53 @@ struct NoteListScreen: View {
         Note(category: .like, title: "Like • Music", content: "Lo-fi beats"),
         Note(category: .like, title: "Like • Place", content: "Kyoto"),
         // dislike (2)
-        Note(category: .dislike, title: "Dislike • Weather", content: "Humidity"),
+        Note(
+            category: .dislike,
+            title: "Dislike • Weather",
+            content: "Humidity"
+        ),
         Note(category: .dislike, title: "Dislike • Food", content: "Too spicy"),
         // anniversary (2)
-        Note(category: .anniversary, title: "Anniversary • Wedding", content: "2018-06-17"),
-        Note(category: .anniversary, title: "Anniversary • Launch", content: "App v1.0"),
+        Note(
+            category: .anniversary,
+            title: "Anniversary • Wedding",
+            content: "2018-06-17"
+        ),
+        Note(
+            category: .anniversary,
+            title: "Anniversary • Launch",
+            content: "App v1.0"
+        ),
         // family (1)
-        Note(category: .family, title: "Family • Call", content: "Mom on Sunday"),
+        Note(
+            category: .family,
+            title: "Family • Call",
+            content: "Mom on Sunday"
+        ),
         // hobby (3)
         Note(category: .hobby, title: "Hobby • Photography", content: "Street"),
         Note(category: .hobby, title: "Hobby • Gardening", content: "Herbs"),
         Note(category: .hobby, title: "Hobby • Reading", content: "Sci-fi"),
         // school (2)
-        Note(category: .school, title: "School • Lecture", content: "iOS Patterns"),
-        Note(category: .school, title: "School • Homework", content: "Algorithms"),
+        Note(
+            category: .school,
+            title: "School • Lecture",
+            content: "iOS Patterns"
+        ),
+        Note(
+            category: .school,
+            title: "School • Homework",
+            content: "Algorithms"
+        ),
         // work (4)
         Note(category: .work, title: "Work • Standup", content: "10:00"),
-        Note(category: .work, title: "Work • Design Review", content: "GlassSnapDial"),
+        Note(
+            category: .work,
+            title: "Work • Design Review",
+            content: "GlassSnapDial"
+        ),
         Note(category: .work, title: "Work • Code", content: "Refactor models"),
-        Note(category: .work, title: "Work • Retro", content: "Friday")
+        Note(category: .work, title: "Work • Retro", content: "Friday"),
     ]
 
     return NoteListScreen(

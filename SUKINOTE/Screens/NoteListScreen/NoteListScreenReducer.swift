@@ -45,12 +45,7 @@ struct NoteListScreenReducer {
                 return .none
 
             case .addNoteButtonTapped:
-                // Create a placeholder note with the current filter category (or .like if "All" is selected)
-                state.editNote = Note(
-                    category: state.filterCategory ?? .like,
-                    title: "",
-                    content: ""
-                )
+                // No state changes needed here; the view controls sheet presentation.
                 return .none
 
             case let .categorySelected(category):
