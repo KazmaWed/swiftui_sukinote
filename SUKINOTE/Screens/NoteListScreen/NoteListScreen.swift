@@ -11,6 +11,7 @@ import ComposableArchitecture
 struct NoteListScreen: View {
     @Bindable var store: StoreOf<NoteListScreenReducer>
     @State private var fabWidth: CGFloat = 0
+    @State private var fabHeight: CGFloat = 0
     @State private var isScrolling: Bool = false
 
     var body: some View {
@@ -25,16 +26,26 @@ struct NoteListScreen: View {
                     }
                 }(),
                 onNoteTap: { note in
+                    isScrolling = false
                     store.send(.noteTapped(note))
                 },
                 onNoteEdit: { note in
+                    isScrolling = false
                     store.send(.editNoteTapped(note))
                 },
                 onNoteDelete: { note in
+                    isScrolling = false
                     store.send(.deleteNoteTapped(note))
-                }
+                },
+                bottomPadding: fabHeight + 16
             )
             .animation(.easeInOut(duration: 0.3), value: store.filterCategory)
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { _ in
+                        isScrolling = false
+                    }
+            )
             .onAppear {
                 store.send(.onAppear)
             }
@@ -86,10 +97,8 @@ struct NoteListScreen: View {
                                     Color.clear
                                         .onAppear {
                                             fabWidth = geometry.size.width
+                                            fabHeight = geometry.size.height
                                         }
-                                        .onChange(of: geometry.size.width) { _, newWidth in
-                                        fabWidth = newWidth
-                                    }
                                 }
                             )
                         }

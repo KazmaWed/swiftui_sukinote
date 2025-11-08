@@ -12,6 +12,7 @@ struct NotesListView: View {
     let onNoteTap: (Note) -> Void
     let onNoteEdit: (Note) -> Void
     let onNoteDelete: (Note) -> Void
+    var bottomPadding: CGFloat = 0
 
     var body: some View {
         if notes.isEmpty {
@@ -46,6 +47,10 @@ struct NotesListView: View {
                         removal: .scale(scale: 0.8).combined(with: .opacity)
                     )
                 )
+            }
+            .safeAreaInset(edge: .bottom) {
+                Spacer()
+                    .frame(height: bottomPadding)
             }
             .transition(.opacity)
         }
