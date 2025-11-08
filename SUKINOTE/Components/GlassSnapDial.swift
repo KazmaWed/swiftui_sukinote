@@ -38,7 +38,7 @@ struct GlassSnapDialItem {
 
 class GlassSnapDial: UIScrollView, UIGestureRecognizerDelegate {
     // Delayed onScrollEnd invocation
-    var scrollEndDelay: TimeInterval = 0.8
+    var collapseDelay: TimeInterval = 1.2
     private var scrollEndWorkItem: DispatchWorkItem?
     private var isProgrammaticScroll: Bool = false
 
@@ -338,6 +338,10 @@ class GlassSnapDial: UIScrollView, UIGestureRecognizerDelegate {
         let targetCenterX = targetView.frame.midX
         let targetOffsetX = targetCenterX - bounds.width / 2
         isProgrammaticScroll = true
+        
+        // Cancel any pending scroll end work item
+        scrollEndWorkItem?.cancel()
+        
         if animated {
             UIView.animate(
                 withDuration: animationDuration,
@@ -491,7 +495,7 @@ extension GlassSnapDial: UIScrollViewDelegate {
         }
         scrollEndWorkItem = workItem
         DispatchQueue.main.asyncAfter(
-            deadline: .now() + scrollEndDelay,
+            deadline: .now() + collapseDelay,
             execute: workItem
         )
     }
@@ -521,7 +525,7 @@ extension GlassSnapDial: UIScrollViewDelegate {
             }
             scrollEndWorkItem = workItem
             DispatchQueue.main.asyncAfter(
-                deadline: .now() + scrollEndDelay,
+                deadline: .now() + collapseDelay,
                 execute: workItem
             )
         }
@@ -561,14 +565,13 @@ struct GlassSnapDialView: View {
     var font: UIFont = .systemFont(ofSize: 12, weight: .semibold)
     var tintColor: UIColor = .label
     var animationDuration: TimeInterval = 0.3
-    var scrollEndDelay: TimeInterval = 0.8
     var hapticsEnabled: Bool = true
 
     // Compact width control (managed inside this view)
     var compactEnabled: Bool = true
     var initialCompact: Bool = true
     var compactWidth: CGFloat = 240
-    var collapseDelayAfterTap: TimeInterval = 1.5
+    var collapseDelay: TimeInterval = 1.2
 
     // Optional: render with Button(.glass) style as a non-interactive background
     var useButtonGlassBackground: Bool = false
@@ -595,32 +598,49 @@ struct GlassSnapDialView: View {
             font: font,
             tintColor: tintColor,
             animationDuration: animationDuration,
-            scrollEndDelay: scrollEndDelay,
+            collapseDelay: collapseDelay,
             hapticsEnabled: hapticsEnabled,
             selected: $selected,
             initialIndex: initialIndex,
             onScrollBegin: {
                 if compactEnabled {
                     collapseTask?.cancel()
-                    withAnimation(.easeOut(duration: animationDuration)) { isCompact = false }
+                    withAnimation(.easeOut(duration: animationDuration)) { 
+                        isCompact = false
+                    }
                 }
                 onScrollBegin?()
             },
             onScrollEnd: { idx in
                 if compactEnabled {
-                    withAnimation(.easeOut(duration: animationDuration)) { isCompact = true }
+                    withAnimation(.easeOut(duration: animationDuration)) { 
+                        isCompact = true
+                    }
+                    // Call the callback after setting isCompact to true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + animationDuration) {
+                        onScrollEnd?(idx)
+                    }
+                } else {
+                    onScrollEnd?(idx)
                 }
-                onScrollEnd?(idx)
             },
             onTap: { idx in
                 if compactEnabled {
                     collapseTask?.cancel()
-                    withAnimation(.easeOut(duration: animationDuration)) { isCompact = false }
+                    withAnimation(.easeOut(duration: animationDuration)) { 
+                        isCompact = false
+                    }
                     let task = DispatchWorkItem {
-                        withAnimation(.easeOut(duration: animationDuration)) { isCompact = true }
+                        withAnimation(.easeOut(duration: animationDuration)) { 
+                            isCompact = true
+                        }
+                        // Call the callback after setting isCompact to true
+                        DispatchQueue.main.asyncAfter(deadline: .now() + animationDuration) {
+                            onScrollEnd?(idx)
+                        }
                     }
                     collapseTask = task
-                    DispatchQueue.main.asyncAfter(deadline: .now() + collapseDelayAfterTap, execute: task)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + collapseDelay, execute: task)
                 }
                 onTap?(idx)
             },
@@ -633,7 +653,9 @@ struct GlassSnapDialView: View {
 
         let base = dialContent
             .frame(width: (compactEnabled && isCompact) ? compactWidth : nil)
-            .onAppear { isCompact = initialCompact }
+            .onAppear { 
+                isCompact = initialCompact
+            }
             .mask(
                 GeometryReader { geometry in
                     let fadeLocation = fadeWidth / geometry.size.width
@@ -689,7 +711,7 @@ struct GlassSnapDialView: View {
         var font: UIFont
         var tintColor: UIColor
         var animationDuration: TimeInterval
-        var scrollEndDelay: TimeInterval
+        var collapseDelay: TimeInterval
         var hapticsEnabled: Bool
         @Binding var selected: Int
         var initialIndex: Int
@@ -715,7 +737,7 @@ struct GlassSnapDialView: View {
         func makeUIView(context: Context) -> GlassSnapDial {
             let dial = GlassSnapDial()
             dial.animationDuration = animationDuration
-            dial.scrollEndDelay = scrollEndDelay
+            dial.collapseDelay = collapseDelay
             dial.hapticsEnabled = hapticsEnabled
 
             dial.onCenteredItemChanged = { index in
@@ -745,7 +767,7 @@ struct GlassSnapDialView: View {
 
         func updateUIView(_ uiView: GlassSnapDial, context: Context) {
             uiView.animationDuration = animationDuration
-            uiView.scrollEndDelay = scrollEndDelay
+            uiView.collapseDelay = collapseDelay
             uiView.hapticsEnabled = hapticsEnabled
             let newConfig = Coordinator.Config(
                 itemsCount: items.count,
@@ -809,12 +831,11 @@ struct GlassSnapDialView: View {
                     font: .systemFont(ofSize: 12, weight: .semibold),
                     tintColor: UIColor.label,
                     animationDuration: animationDuration,
-                    scrollEndDelay: 1.0,
                     hapticsEnabled: false,
                     compactEnabled: true,
                     initialCompact: true,
                     compactWidth: 240,
-                    collapseDelayAfterTap: 1.5,
+                    collapseDelay: 1.2,
                     useButtonGlassBackground: true,
                     selected: $selected,
                     initialIndex: 0,

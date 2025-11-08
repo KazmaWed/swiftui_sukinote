@@ -18,6 +18,7 @@ struct CategoryPickerView: View {
     let onCategorySelected: (NoteCategory?) -> Void
     var animationDuration: TimeInterval = 0.3
     var highlightAnimationDuration: TimeInterval = 0.3
+    var compactWidth: CGFloat = 240
     var onScrollBegin: (() -> Void)? = nil
     var onScrollEnd: (() -> Void)? = nil
     var onCenteredItemChanged: ((NoteCategory?) -> Void)? = nil  // Called when centered item changes
@@ -67,12 +68,11 @@ struct CategoryPickerView: View {
             itemSize: CGSize(width: 60, height: 50),
             font: .systemFont(ofSize: 12, weight: .semibold),
             animationDuration: animationDuration,
-            scrollEndDelay: 0.8,
             hapticsEnabled: true,
-            compactEnabled: false,
-            initialCompact: false,
-            compactWidth: 240,
-            collapseDelayAfterTap: 1.5,
+            compactEnabled: true,
+            initialCompact: true,
+            compactWidth: compactWidth,
+            collapseDelay: 1.2,
             useButtonGlassBackground: true,
             buttonCornerRadius: 1000,
             selected: $selectedIndex,
