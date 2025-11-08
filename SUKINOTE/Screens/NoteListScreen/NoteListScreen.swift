@@ -115,6 +115,9 @@ struct NoteListScreen: View {
                             },
                             onScrollEnd: {
                                 isScrolling = false
+                            },
+                            onCenteredItemChanged: { category in
+                                store.send(.categorySelected(category))
                             }
                         )
                         .shadow(

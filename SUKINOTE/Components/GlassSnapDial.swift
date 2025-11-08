@@ -574,6 +574,7 @@ struct GlassSnapDialView: View {
     var onScrollBegin: (() -> Void)?
     var onScrollEnd: ((Int) -> Void)?
     var onTap: ((Int) -> Void)?
+    var onCenteredItemChanged: ((Int) -> Void)?
 
     @State private var isCompact: Bool = true
     @State private var collapseTask: DispatchWorkItem? = nil
@@ -614,7 +615,8 @@ struct GlassSnapDialView: View {
                     DispatchQueue.main.asyncAfter(deadline: .now() + collapseDelayAfterTap, execute: task)
                 }
                 onTap?(idx)
-            }
+            },
+            onCenteredItemChanged: onCenteredItemChanged
         )
     }
 
@@ -669,6 +671,7 @@ struct GlassSnapDialView: View {
         var onScrollBegin: (() -> Void)?
         var onScrollEnd: ((Int) -> Void)?
         var onTap: ((Int) -> Void)?
+        var onCenteredItemChanged: ((Int) -> Void)?
 
         func makeUIView(context: Context) -> GlassSnapDial {
             let dial = GlassSnapDial()
@@ -677,7 +680,10 @@ struct GlassSnapDialView: View {
             dial.hapticsEnabled = hapticsEnabled
 
             dial.onCenteredItemChanged = { index in
-                DispatchQueue.main.async { self.selected = index }
+                DispatchQueue.main.async {
+                    self.selected = index
+                    self.onCenteredItemChanged?(index)
+                }
             }
             dial.onScrollBegin = { DispatchQueue.main.async { self.onScrollBegin?() } }
             dial.onScrollEnd = { index in DispatchQueue.main.async { self.onScrollEnd?(index) } }

@@ -20,6 +20,7 @@ struct CategoryPickerView: View {
     var highlightAnimationDuration: TimeInterval = 0.3
     var onScrollBegin: (() -> Void)? = nil
     var onScrollEnd: (() -> Void)? = nil
+    var onCenteredItemChanged: ((NoteCategory?) -> Void)? = nil  // Called when centered item changes
     var showAllOption: Bool = true  // Whether to show "All" option
 
     @State private var selectedIndex: Int = 0
@@ -100,6 +101,17 @@ struct CategoryPickerView: View {
                     category = NoteCategory.allCases[idx]
                 }
                 onCategorySelected(category)
+            },
+            onCenteredItemChanged: { idx in
+                let category: NoteCategory?
+                if showAllOption {
+                    // Index 0 is "All" (nil), indices 1+ are NoteCategory items
+                    category = idx == 0 ? nil : NoteCategory.allCases[idx - 1]
+                } else {
+                    // All indices are NoteCategory items
+                    category = NoteCategory.allCases[idx]
+                }
+                onCenteredItemChanged?(category)
             }
         )
         .frame(height: 60)
