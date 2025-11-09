@@ -613,12 +613,10 @@ struct GlassSnapDialView: View {
             },
             onScrollEnd: { idx in
                 if compactEnabled {
+                    // Call the callback immediately when starting to collapse
+                    onScrollEnd?(idx)
                     withAnimation(.easeOut(duration: animationDuration)) { 
                         isCompact = true
-                    }
-                    // Call the callback after setting isCompact to true
-                    DispatchQueue.main.asyncAfter(deadline: .now() + animationDuration) {
-                        onScrollEnd?(idx)
                     }
                 } else {
                     onScrollEnd?(idx)
@@ -631,12 +629,10 @@ struct GlassSnapDialView: View {
                         isCompact = false
                     }
                     let task = DispatchWorkItem {
+                        // Call the callback immediately when starting to collapse
+                        onScrollEnd?(idx)
                         withAnimation(.easeOut(duration: animationDuration)) { 
                             isCompact = true
-                        }
-                        // Call the callback after setting isCompact to true
-                        DispatchQueue.main.asyncAfter(deadline: .now() + animationDuration) {
-                            onScrollEnd?(idx)
                         }
                     }
                     collapseTask = task

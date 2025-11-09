@@ -10,38 +10,39 @@ import SwiftUI
 
 struct NoteListScreen: View {
     @Bindable var store: StoreOf<NoteListScreenReducer>
-    @State private var fabWidth: CGFloat = 0
-    @State private var fabHeight: CGFloat = 0
+    @State private var fabSize: CGSize = .zero
     @State private var isScrolling: Bool = false
     @State private var pendingNewNote: Bool = false
     @State private var screenWidth: CGFloat = 0
-
-    var body: some View {
-        let animationDuration: Double = 0.3
-        let highlightAnimationDuration: Double = 0.1
-        let bottomPadding: Double = 16
-        let horizontalPadding: CGFloat = 16
-        let spacingBetweenFABAndDial: CGFloat = 4
-        // Calculate compact width: screen width - (2 * FAB width) - (2 * horizontal padding) - (2 * spacing)
-        let compactDialWidth: CGFloat = max(
+    
+    // MARK: - Layout Constants
+    private let animationDuration: Double = 0.3
+    private let highlightAnimationDuration: Double = 0.1
+    private let bottomPadding: Double = 16
+    private let horizontalPadding: CGFloat = 16
+    private let spacingBetweenFABAndDial: CGFloat = 4
+    
+    private var compactDialWidth: CGFloat {
+        max(
             0,
-            screenWidth - (fabWidth * 2) - (horizontalPadding * 2)
+            screenWidth - (fabSize.width * 2) - (horizontalPadding * 2)
                 - (spacingBetweenFABAndDial * 2)
         )
+    }
+    
+    private var filteredNotes: [Note] {
+        if let category = store.filterCategory {
+            return store.notes.filter { $0.category == category }
+        } else {
+            return store.notes
+        }
+    }
 
+    var body: some View {
         GeometryReader { geometry in
             NavigationStack {
                 NotesListView(
-                    notes: {
-                        if let category = store.filterCategory {
-                            return store.notes.filter {
-                                $0.category == category
-                            }
-                        } else {
-                            // "All" is selected - show all notes
-                            return store.notes
-                        }
-                    }(),
+                    notes: filteredNotes,
                     onNoteTap: { note in
                         store.send(.noteTapped(note))
                     },
@@ -51,7 +52,7 @@ struct NoteListScreen: View {
                     onNoteDelete: { note in
                         store.send(.deleteNoteTapped(note))
                     },
-                    bottomPadding: fabHeight + bottomPadding
+                    bottomPadding: fabSize.height + bottomPadding
                 )
                 .animation(
                     .easeInOut(duration: animationDuration),
@@ -61,124 +62,13 @@ struct NoteListScreen: View {
                     store.send(.onAppear)
                 }
                 .overlay(alignment: .bottom) {
-
-                    ZStack {
-                        if !isScrolling {
-                            HStack {
-                                CircularButton(
-                                    systemImage: "arrow.up.arrow.down",
-                                    action: {
-                                        // TODO: Implement sort functionality
-                                    },
-                                    onSizeChanged: { size in
-                                        fabWidth = size.width
-                                        fabHeight = size.height
-                                    }
-                                )
-
-                                Spacer()
-
-                                CircularButton(
-                                    systemImage: "plus",
-                                    action: {
-                                        pendingNewNote = true
-                                    }
-                                )
-                            }
-                            .transition(.opacity.combined(with: .scale))
-                        }
-
-                        HStack(spacing: 4) {
-                            if !isScrolling {
-                                Spacer()
-                                    .frame(width: fabWidth)
-                                    .transition(.opacity.combined(with: .scale))
-                            }
-
-                            CategoryPickerView(
-                                selectedCategory: store.filterCategory,
-                                onCategorySelected: { category in
-                                    store.send(.categorySelected(category))
-                                },
-                                animationDuration: animationDuration,
-                                highlightAnimationDuration:
-                                    highlightAnimationDuration,
-                                compactWidth: compactDialWidth,
-                                onScrollBegin: {
-                                    withAnimation(
-                                        .easeOut(duration: animationDuration)
-                                    ) {
-                                        isScrolling = true
-                                    }
-                                },
-                                onScrollEnd: {
-                                    withAnimation(
-                                        .easeOut(duration: animationDuration)
-                                    ) {
-                                        isScrolling = false
-                                    }
-                                },
-                                onCenteredItemChanged: { category in
-                                    store.send(.categorySelected(category))
-                                }
-                            )
-                            .elevatedShadow()
-                            .frame(maxWidth: isScrolling ? .infinity : nil)
-
-                            if !isScrolling {
-                                Spacer()
-                                    .frame(width: fabWidth)
-                                    .transition(.opacity.combined(with: .scale))
-                            }
-                        }
-                        .padding(.horizontal, 0)
-                    }
-                    .padding()
-                    .animation(
-                        .spring(response: animationDuration),
-                        value: isScrolling
-                    )
+                    bottomOverlay
                 }
-                // Present detail screen as sheet when note is tapped
-                .sheet(
-                    isPresented: Binding(
-                        get: {
-                            store.selectedNote != nil && !store.isEditingNote
-                        },
-                        set: { isPresented in
-                            if !isPresented { store.send(.dismissNoteView) }
-                        }
-                    )
-                ) {
-                    if let note = store.selectedNote {
-                        NoteDetailScreen(note: note) {
-                            // Switch from detail to edit
-                            store.send(.editNoteTapped(note))
-                        }
-                    }
+                .sheet(isPresented: detailSheetBinding) {
+                    detailSheet
                 }
-                // Present editor as sheet: show when editing existing note OR add button tapped (new note)
-                .sheet(
-                    isPresented: Binding(
-                        get: {
-                            (store.selectedNote != nil && store.isEditingNote)
-                                || pendingNewNote
-                        },
-                        set: { isPresented in
-                            if !isPresented {
-                                pendingNewNote = false
-                                store.send(.dismissNoteView)
-                            }
-                        }
-                    )
-                ) {
-                    NoteEditScreen(
-                        noteToEdit: store.isEditingNote
-                            ? store.selectedNote : nil,
-                        defaultCategory: store.filterCategory
-                    ) { newNote in
-                        store.send(.saveNote(newNote))
-                    }
+                .sheet(isPresented: editSheetBinding) {
+                    editSheet
                 }
                 .onAppear {
                     screenWidth = geometry.size.width
@@ -187,6 +77,133 @@ struct NoteListScreen: View {
                     screenWidth = newWidth
                 }
             }
+        }
+    }
+    
+    // MARK: - Bottom Overlay (FABs + Category Picker)
+    private var bottomOverlay: some View {
+        ZStack {
+            if !isScrolling {
+                fabButtons
+            }
+            
+            categoryPickerWithSpacers
+        }
+        .padding()
+        .animation(
+            .spring(response: animationDuration),
+            value: isScrolling
+        )
+    }
+    
+    private var fabButtons: some View {
+        HStack {
+            CircularButton(
+                systemImage: "arrow.up.arrow.down",
+                action: {
+                    // TODO: Implement sort functionality
+                },
+                onSizeChanged: { size in
+                    fabSize = size
+                }
+            )
+
+            Spacer()
+
+            CircularButton(
+                systemImage: "plus",
+                action: {
+                    pendingNewNote = true
+                }
+            )
+        }
+        .transition(.opacity.combined(with: .scale))
+    }
+    
+    private var categoryPickerWithSpacers: some View {
+        HStack(spacing: 4) {
+            if !isScrolling {
+                Spacer()
+                    .frame(width: fabSize.width)
+                    .transition(.opacity.combined(with: .scale))
+            }
+
+            CategoryPickerView(
+                selectedCategory: store.filterCategory,
+                onCategorySelected: { category in
+                    store.send(.categorySelected(category))
+                },
+                animationDuration: animationDuration,
+                highlightAnimationDuration: highlightAnimationDuration,
+                compactWidth: compactDialWidth,
+                onScrollBegin: {
+                    withAnimation(.easeOut(duration: animationDuration)) {
+                        isScrolling = true
+                    }
+                },
+                onScrollEnd: {
+                    withAnimation(.easeOut(duration: animationDuration)) {
+                        isScrolling = false
+                    }
+                },
+                onCenteredItemChanged: { category in
+                    store.send(.categorySelected(category))
+                }
+            )
+            .elevatedShadow()
+            .frame(maxWidth: isScrolling ? .infinity : nil)
+
+            if !isScrolling {
+                Spacer()
+                    .frame(width: fabSize.width)
+                    .transition(.opacity.combined(with: .scale))
+            }
+        }
+        .padding(.horizontal, 0)
+    }
+    
+    // MARK: - Sheets
+    private var detailSheetBinding: Binding<Bool> {
+        Binding(
+            get: {
+                store.selectedNote != nil && !store.isEditingNote
+            },
+            set: { isPresented in
+                if !isPresented { store.send(.dismissNoteView) }
+            }
+        )
+    }
+    
+    @ViewBuilder
+    private var detailSheet: some View {
+        if let note = store.selectedNote {
+            NoteDetailScreen(note: note) {
+                store.send(.editNoteTapped(note))
+            }
+        }
+    }
+    
+    private var editSheetBinding: Binding<Bool> {
+        Binding(
+            get: {
+                (store.selectedNote != nil && store.isEditingNote)
+                    || pendingNewNote
+            },
+            set: { isPresented in
+                if !isPresented {
+                    pendingNewNote = false
+                    store.send(.dismissNoteView)
+                }
+            }
+        )
+    }
+    
+    private var editSheet: some View {
+        NoteEditScreen(
+            noteToEdit: store.isEditingNote ? store.selectedNote : nil,
+            defaultCategory: store.filterCategory
+        ) { newNote in
+            store.send(.saveNote(newNote))
         }
     }
 }
