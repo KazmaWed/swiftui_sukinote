@@ -18,6 +18,9 @@ struct NoteListScreenReducer {
         var isEditingNote: Bool = false  // true = edit mode, false = detail mode
         var isScrolling: Bool = false  // Category picker scroll state
         var pendingNewNote: Bool = false  // Flag for new note creation
+        var sortType: NoteSortType = .category
+        var sortOrder: SortOrder = .ascending
+        var isSortSheetPresented: Bool = false
     }
 
     enum Action {
@@ -32,6 +35,10 @@ struct NoteListScreenReducer {
         case dismissNoteView
         case scrollBegin
         case scrollEnd
+        case sortButtonTapped
+        case dismissSortSheet
+        case sortTypeChanged(NoteSortType)
+        case sortOrderChanged(SortOrder)
     }
 
     @Dependency(\.noteStore) var noteStore
@@ -97,6 +104,36 @@ struct NoteListScreenReducer {
                 
             case .scrollEnd:
                 state.isScrolling = false
+                return .none
+
+            case .sortButtonTapped:
+                state.isSortSheetPresented = true
+                return .none
+
+            case .dismissSortSheet:
+                state.isSortSheetPresented = false
+                return .none
+
+            case let .sortTypeChanged(sortType):
+                state.sortType = sortType
+
+                // Automatically switch category filter based on sort type
+                switch sortType {
+                case .category:
+                    // For category sort, show all categories
+                    state.filterCategory = nil
+                case .anniversaryDate:
+                    // For anniversary date sort, show only anniversary category
+                    state.filterCategory = .anniversary
+                case .createdDate, .title:
+                    // For other sort types, keep current filter
+                    break
+                }
+
+                return .none
+
+            case let .sortOrderChanged(sortOrder):
+                state.sortOrder = sortOrder
                 return .none
             }
         }

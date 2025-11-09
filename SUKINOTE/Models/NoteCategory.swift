@@ -17,6 +17,18 @@ enum NoteCategory: String, Codable, CaseIterable, Sendable {
     case school = "school"
     case work = "work"
 
+    var sortOrder: Int {
+        switch self {
+        case .like: return 0
+        case .dislike: return 1
+        case .hobby: return 2
+        case .anniversary: return 3
+        case .family: return 4
+        case .school: return 5
+        case .work: return 6
+        }
+    }
+
     var displayName: String {
         switch self {
         case .like:
