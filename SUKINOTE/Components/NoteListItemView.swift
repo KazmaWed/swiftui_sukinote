@@ -21,6 +21,11 @@ struct NoteListItemView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(note.title.isEmpty ? "No Title" : note.title)
                     .font(.headline)
+                if let anniversaryDate = note.anniversaryDate {
+                    Text(anniversaryDate.formatted(date: .long, time: .omitted))
+                        .font(.headline)
+                        .fontWeight(.regular)
+                }
                 if note.content != "" {
                     Text(note.content)
                         .font(.subheadline)

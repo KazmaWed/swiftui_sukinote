@@ -16,8 +16,8 @@ struct NoteListScreen: View {
     // MARK: - Layout Constants
     private let animationDuration: Double = 0.3
     private let highlightAnimationDuration: Double = 0.1
-    private let bottomPadding: Double = 16
-    private let horizontalPadding: CGFloat = 16
+    private let bottomPadding: Double = 28
+    private let horizontalPadding: CGFloat = 12
     private let spacingBetweenFABAndDial: CGFloat = 4
     
     private var compactDialWidth: CGFloat {
@@ -58,6 +58,18 @@ struct NoteListScreen: View {
                 )
                 .onAppear {
                     store.send(.onAppear)
+                }
+                .navigationTitle("Title")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button(action: {
+                            // TODO: Implement settings functionality
+                        }) {
+                            Image(systemName: "gearshape.fill")
+                                .imageScale(.medium)
+                        }
+                    }
                 }
                 .overlay(alignment: .bottom) {
                     bottomOverlay
@@ -251,12 +263,16 @@ struct NoteListScreen: View {
         Note(
             category: .anniversary,
             title: "Wedding Day",
-            content: "2018-06-17"
+            content: "",
+            anniversaryDate: Calendar.current.date(from: DateComponents(year: 2020, month: 6, day: 15))!,
+            isAnnual: true,
         ),
         Note(
             category: .anniversary,
             title: "App Launch",
-            content: "First version went live"
+            content: "First version went live",
+            anniversaryDate: Calendar.current.date(from: DateComponents(year: 2024, month: 1, day: 1))!,
+            isAnnual: true
         ),
         // family (1)
         Note(
@@ -298,7 +314,7 @@ struct NoteListScreen: View {
         ),
     ]
 
-    return NoteListScreen(
+    NoteListScreen(
         store: Store(
             initialState: NoteListScreenReducer.State(
                 notes: sampleNotes,

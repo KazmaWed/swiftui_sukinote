@@ -48,9 +48,9 @@ struct NotesListView: View {
                     )
                 )
             }
+            .listStyle(.plain)
             .safeAreaInset(edge: .bottom) {
-                Spacer()
-                    .frame(height: bottomPadding)
+                Color.clear.frame(height: bottomPadding)
             }
             .transition(.opacity)
         }

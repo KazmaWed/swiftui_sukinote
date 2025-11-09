@@ -17,10 +17,7 @@ struct NoteDetailScreen: View {
             headerBar
                 .padding(.horizontal)
                 .padding(.top)
-            
-            Spacer().frame(height: 4)
-            
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 12) {
                 categorySection
                 Divider()
                 contentSection
@@ -30,12 +27,9 @@ struct NoteDetailScreen: View {
                 }
             }
             .padding()
-            .background(Color(.systemBackground))
-            .cornerRadius(8)
-            .padding(.horizontal)
-            
+
             Spacer()
-            
+
             closeButton
                 .padding(.bottom)
         }
@@ -44,7 +38,6 @@ struct NoteDetailScreen: View {
             maxHeight: .infinity,
             alignment: .top
         )
-        .background(Color(.systemGroupedBackground))
     }
 
     @ViewBuilder
@@ -68,16 +61,16 @@ struct NoteDetailScreen: View {
                 }
                 .buttonStyle(.plain)
             }
+            .padding()
         }
         .frame(height: 44)
     }
 
     @ViewBuilder
     private var categorySection: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 8) {
             Text("Category")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
+                .sectionHeaderStyle()
             HStack(spacing: 8) {
                 Image(systemName: note.category.iconFilled)
                     .foregroundColor(Color(note.category.highlightUIColor))
@@ -92,10 +85,9 @@ struct NoteDetailScreen: View {
     @ViewBuilder
     private var contentSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 8) {
                 Text("Title")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .sectionHeaderStyle()
                 Text(note.title.isEmpty ? "Empty" : note.title)
                     .font(.body)
                     .foregroundColor(
@@ -103,10 +95,10 @@ struct NoteDetailScreen: View {
                             ? Color(uiColor: .placeholderText) : .primary
                     )
             }
-            VStack(alignment: .leading, spacing: 4) {
+            Divider()
+            VStack(alignment: .leading, spacing: 8) {
                 Text("Note")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .sectionHeaderStyle()
                 Text(note.content.isEmpty ? "Empty" : note.content)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .font(.body)
@@ -123,8 +115,7 @@ struct NoteDetailScreen: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text("Anniversary")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .sectionHeaderStyle()
                 Spacer()
                 Text(
                     note.anniversaryDate?.formatted(date: .long, time: .omitted)
@@ -136,8 +127,7 @@ struct NoteDetailScreen: View {
             if let isAnnual = note.isAnnual {
                 HStack {
                     Text("Annual")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .sectionHeaderStyle()
                     Spacer()
                     Text(isAnnual ? "Yes" : "No")
                         .font(.body)
