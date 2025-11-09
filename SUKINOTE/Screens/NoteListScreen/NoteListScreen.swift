@@ -65,62 +65,23 @@ struct NoteListScreen: View {
                     ZStack {
                         if !isScrolling {
                             HStack {
-                                Button(
+                                CircularButton(
+                                    systemImage: "arrow.up.arrow.down",
                                     action: {
                                         // TODO: Implement sort functionality
-                                    }
-                                ) {
-                                    Image(systemName: "arrow.up.arrow.down")
-                                        .imageScale(.medium)
-                                        .frame(
-                                            width: 40,
-                                            height: 40,
-                                            alignment: .center
-                                        )
-                                }
-                                .buttonStyle(.glass)
-                                .clipShape(Circle())
-                                .elevatedShadow()
-                                .background(
-                                    GeometryReader { geometry in
-                                        Color.clear
-                                            .onAppear {
-                                                fabWidth = geometry.size.width
-                                            }
-                                            .onChange(of: geometry.size.width) {
-                                                _,
-                                                newWidth in
-                                                fabWidth = newWidth
-                                            }
+                                    },
+                                    onSizeChanged: { size in
+                                        fabWidth = size.width
+                                        fabHeight = size.height
                                     }
                                 )
 
                                 Spacer()
 
-                                Button(
+                                CircularButton(
+                                    systemImage: "plus",
                                     action: {
-                                        // New note: present sheet without creating a placeholder in state
                                         pendingNewNote = true
-                                    }
-                                ) {
-                                    Image(systemName: "plus")
-                                        .imageScale(.medium)
-                                        .frame(
-                                            width: 40,
-                                            height: 40,
-                                            alignment: .center
-                                        )
-                                }
-                                .buttonStyle(.glass)
-                                .clipShape(Circle())
-                                .elevatedShadow()
-                                .background(
-                                    GeometryReader { geometry in
-                                        Color.clear
-                                            .onAppear {
-                                                fabWidth = geometry.size.width
-                                                fabHeight = geometry.size.height
-                                            }
                                     }
                                 )
                             }
