@@ -18,6 +18,7 @@ struct CategoryPickerView: View {
     let onCategorySelected: (NoteCategory?) -> Void
     var animationDuration: TimeInterval = 0.3
     var highlightAnimationDuration: TimeInterval = 0.3
+    var compactEnabled: Bool = true
     var compactWidth: CGFloat = 240
     var onScrollBegin: (() -> Void)? = nil
     var onScrollEnd: (() -> Void)? = nil
@@ -69,7 +70,7 @@ struct CategoryPickerView: View {
             font: .systemFont(ofSize: 12, weight: .semibold),
             animationDuration: animationDuration,
             hapticsEnabled: true,
-            compactEnabled: true,
+            compactEnabled: compactEnabled,
             initialCompact: true,
             compactWidth: compactWidth,
             collapseDelay: 1.2,

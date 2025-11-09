@@ -146,6 +146,7 @@ struct NoteEditScreen: View {
         CategoryPickerView(
             selectedCategory: category,
             onCategorySelected: { _ in },
+            compactEnabled: false,
             onCenteredItemChanged: { selected in
                 if let selected = selected {
                     category = selected

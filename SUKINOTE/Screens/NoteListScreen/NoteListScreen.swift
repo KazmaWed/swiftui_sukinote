@@ -11,8 +11,6 @@ import SwiftUI
 struct NoteListScreen: View {
     @Bindable var store: StoreOf<NoteListScreenReducer>
     @State private var fabSize: CGSize = .zero
-    @State private var isScrolling: Bool = false
-    @State private var pendingNewNote: Bool = false
     @State private var screenWidth: CGFloat = 0
     
     // MARK: - Layout Constants
@@ -83,7 +81,7 @@ struct NoteListScreen: View {
     // MARK: - Bottom Overlay (FABs + Category Picker)
     private var bottomOverlay: some View {
         ZStack {
-            if !isScrolling {
+            if !store.isScrolling {
                 fabButtons
             }
             
@@ -92,7 +90,7 @@ struct NoteListScreen: View {
         .padding()
         .animation(
             .spring(response: animationDuration),
-            value: isScrolling
+            value: store.isScrolling
         )
     }
     
@@ -113,7 +111,7 @@ struct NoteListScreen: View {
             CircularButton(
                 systemImage: "plus",
                 action: {
-                    pendingNewNote = true
+                    store.send(.addNoteButtonTapped)
                 }
             )
         }
@@ -122,7 +120,7 @@ struct NoteListScreen: View {
     
     private var categoryPickerWithSpacers: some View {
         HStack(spacing: 4) {
-            if !isScrolling {
+            if !store.isScrolling {
                 Spacer()
                     .frame(width: fabSize.width)
                     .transition(.opacity.combined(with: .scale))
@@ -137,23 +135,19 @@ struct NoteListScreen: View {
                 highlightAnimationDuration: highlightAnimationDuration,
                 compactWidth: compactDialWidth,
                 onScrollBegin: {
-                    withAnimation(.easeOut(duration: animationDuration)) {
-                        isScrolling = true
-                    }
+                    store.send(.scrollBegin)
                 },
                 onScrollEnd: {
-                    withAnimation(.easeOut(duration: animationDuration)) {
-                        isScrolling = false
-                    }
+                    store.send(.scrollEnd)
                 },
                 onCenteredItemChanged: { category in
                     store.send(.categorySelected(category))
                 }
             )
             .elevatedShadow()
-            .frame(maxWidth: isScrolling ? .infinity : nil)
+            .frame(maxWidth: store.isScrolling ? .infinity : nil)
 
-            if !isScrolling {
+            if !store.isScrolling {
                 Spacer()
                     .frame(width: fabSize.width)
                     .transition(.opacity.combined(with: .scale))
@@ -187,11 +181,10 @@ struct NoteListScreen: View {
         Binding(
             get: {
                 (store.selectedNote != nil && store.isEditingNote)
-                    || pendingNewNote
+                    || store.pendingNewNote
             },
             set: { isPresented in
                 if !isPresented {
-                    pendingNewNote = false
                     store.send(.dismissNoteView)
                 }
             }

@@ -625,6 +625,8 @@ struct GlassSnapDialView: View {
             onTap: { idx in
                 if compactEnabled {
                     collapseTask?.cancel()
+                    // Call onScrollBegin when expanding via tap
+                    onScrollBegin?()
                     withAnimation(.easeOut(duration: animationDuration)) { 
                         isCompact = false
                     }
