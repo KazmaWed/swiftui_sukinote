@@ -35,7 +35,6 @@ struct NoteListItemView: View {
             }
             Spacer()
         }
-        .background(Color.white)
         .onTapGesture { onTap() }
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
             Button(role: .destructive) {

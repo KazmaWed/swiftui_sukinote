@@ -66,7 +66,7 @@ struct NoteListScreen: View {
                 .toolbar {
                     ToolbarItem(placement: .navigationBarTrailing) {
                         Button(action: {
-                            // TODO: Implement settings functionality
+                            store.send(.settingsButtonTapped)
                         }) {
                             Image(systemName: "gearshape.fill")
                                 .imageScale(.medium)
@@ -204,6 +204,8 @@ struct NoteListScreen: View {
                     set: { store.send(.sortOrderChanged($0)) }
                 )
             )
+        case .settings:
+            SettingSheet()
         case .none:
             EmptyView()
         }

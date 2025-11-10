@@ -14,6 +14,7 @@ struct NoteListScreenReducer {
         case detail(Note)
         case edit(Note?)
         case sort
+        case settings
 
         var id: String {
             switch self {
@@ -23,6 +24,8 @@ struct NoteListScreenReducer {
                 return "edit-\(note?.id.uuidString ?? "new")"
             case .sort:
                 return "sort"
+            case .settings:
+                return "settings"
             }
         }
     }
@@ -52,6 +55,7 @@ struct NoteListScreenReducer {
         case sortButtonTapped
         case sortTypeChanged(NoteSortType)
         case sortOrderChanged(SortOrder)
+        case settingsButtonTapped
     }
 
     @Dependency(\.noteStore) var noteStore
@@ -137,6 +141,10 @@ struct NoteListScreenReducer {
 
             case let .sortOrderChanged(sortOrder):
                 state.sortOrder = sortOrder
+                return .none
+
+            case .settingsButtonTapped:
+                state.presentedSheet = .settings
                 return .none
             }
         }
