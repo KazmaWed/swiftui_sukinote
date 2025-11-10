@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct SettingSheet: View {
+struct SettingScreen: View {
     @Environment(\.dismiss) private var dismiss
     @AppStorage("appTheme") private var selectedTheme: AppTheme = .system
 
@@ -22,10 +22,10 @@ struct SettingSheet: View {
                         }
                     }
                     .pickerStyle(.segmented)
+                    .listRowBackground(Color(.systemBackground))
                 } header: {
                     Text("Theme")
                 }
-
                 Section {
                     HStack {
                         Text("Version")
@@ -33,6 +33,7 @@ struct SettingSheet: View {
                         Text("1.0.0")
                             .foregroundStyle(.secondary)
                     }
+                    .listRowBackground(Color(.systemBackground))
                 } header: {
                     Text("App Information")
                 }
@@ -54,5 +55,5 @@ struct SettingSheet: View {
 }
 
 #Preview {
-    SettingSheet()
+    SettingScreen()
 }

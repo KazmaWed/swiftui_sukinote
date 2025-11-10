@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct PersonSelectorSheet: View {
+struct PersonSelectorScreen: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -45,5 +45,5 @@ struct PersonSelectorSheet: View {
 }
 
 #Preview {
-    PersonSelectorSheet()
+    PersonSelectorScreen()
 }

@@ -214,9 +214,9 @@ struct NoteListScreen: View {
                 )
             )
         case .settings:
-            SettingSheet()
+            SettingScreen()
         case .personSelector:
-            PersonSelectorSheet()
+            PersonSelectorScreen()
         case .none:
             EmptyView()
         }
