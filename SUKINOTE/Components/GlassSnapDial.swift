@@ -118,12 +118,18 @@ class GlassSnapDial: UIScrollView, UIGestureRecognizerDelegate {
 
         addSubview(contentStackView)
 
+        // Use a height constraint with lower priority to avoid conflicts
+        let heightConstraint = contentStackView.heightAnchor.constraint(equalTo: heightAnchor)
+        heightConstraint.priority = .defaultHigh  // Lower priority to allow flexibility
+
         NSLayoutConstraint.activate([
             contentStackView.topAnchor.constraint(equalTo: topAnchor),
             contentStackView.leadingAnchor.constraint(equalTo: leadingAnchor),
             contentStackView.trailingAnchor.constraint(equalTo: trailingAnchor),
             contentStackView.bottomAnchor.constraint(equalTo: bottomAnchor),
-            contentStackView.heightAnchor.constraint(equalTo: heightAnchor),
+            heightConstraint,
+            // Ensure minimum height to prevent collapsing to 0
+            contentStackView.heightAnchor.constraint(greaterThanOrEqualToConstant: 50),
         ])
     }
 
@@ -219,6 +225,8 @@ class GlassSnapDial: UIScrollView, UIGestureRecognizerDelegate {
             let heightConstraint = container.heightAnchor.constraint(
                 equalToConstant: deselectedItemHeight
             )
+            // Lower priority to avoid conflicts during layout transitions
+            heightConstraint.priority = .defaultHigh
 
             NSLayoutConstraint.activate([
                 container.widthAnchor.constraint(
@@ -656,7 +664,7 @@ struct GlassSnapDialView: View {
             }
             .mask(
                 GeometryReader { geometry in
-                    let fadeLocation = fadeWidth / geometry.size.width
+                    let fadeLocation = min(0.1, max(0.0, fadeWidth / geometry.size.width))
                     LinearGradient(
                         gradient: Gradient(stops: [
                             .init(color: .clear, location: 0.0),
