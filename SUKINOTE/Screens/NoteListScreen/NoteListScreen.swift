@@ -64,11 +64,20 @@ struct NoteListScreen: View {
                 .navigationTitle("Title")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button(action: {
+                            store.send(.personSelectorButtonTapped)
+                        }) {
+                            Image(systemName: "person")
+                                .imageScale(.medium)
+                        }
+                    }
+
                     ToolbarItem(placement: .navigationBarTrailing) {
                         Button(action: {
                             store.send(.settingsButtonTapped)
                         }) {
-                            Image(systemName: "gearshape.fill")
+                            Image(systemName: "gearshape")
                                 .imageScale(.medium)
                         }
                     }
@@ -206,6 +215,8 @@ struct NoteListScreen: View {
             )
         case .settings:
             SettingSheet()
+        case .personSelector:
+            PersonSelectorSheet()
         case .none:
             EmptyView()
         }
