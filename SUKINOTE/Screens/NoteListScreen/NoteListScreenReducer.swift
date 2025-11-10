@@ -10,17 +10,31 @@ import Foundation
 
 @Reducer
 struct NoteListScreenReducer {
+    enum SheetType: Equatable, Identifiable {
+        case detail(Note)
+        case edit(Note?)
+        case sort
+
+        var id: String {
+            switch self {
+            case .detail(let note):
+                return "detail-\(note.id)"
+            case .edit(let note):
+                return "edit-\(note?.id.uuidString ?? "new")"
+            case .sort:
+                return "sort"
+            }
+        }
+    }
+
     @ObservableState
     struct State: Equatable {
         var notes: [Note] = []
         var filterCategory: NoteCategory? = nil  // nil means "All"
-        var selectedNote: Note?  // For detail/edit view
-        var isEditingNote: Bool = false  // true = edit mode, false = detail mode
         var isScrolling: Bool = false  // Category picker scroll state
-        var pendingNewNote: Bool = false  // Flag for new note creation
         var sortType: NoteSortType = .category
         var sortOrder: SortOrder = .ascending
-        var isSortSheetPresented: Bool = false
+        var presentedSheet: SheetType? = nil
     }
 
     enum Action {
@@ -32,11 +46,10 @@ struct NoteListScreenReducer {
         case editNoteTapped(Note)
         case deleteNoteTapped(Note)
         case saveNote(Note)
-        case dismissNoteView
+        case dismissSheet
         case scrollBegin
         case scrollEnd
         case sortButtonTapped
-        case dismissSortSheet
         case sortTypeChanged(NoteSortType)
         case sortOrderChanged(SortOrder)
     }
@@ -57,7 +70,7 @@ struct NoteListScreenReducer {
                 return .none
 
             case .addNoteButtonTapped:
-                state.pendingNewNote = true
+                state.presentedSheet = .edit(nil)
                 return .none
 
             case let .categorySelected(category):
@@ -65,13 +78,11 @@ struct NoteListScreenReducer {
                 return .none
 
             case let .noteTapped(note):
-                state.selectedNote = note
-                state.isEditingNote = false
+                state.presentedSheet = .detail(note)
                 return .none
 
             case let .editNoteTapped(note):
-                state.selectedNote = note
-                state.isEditingNote = true
+                state.presentedSheet = .edit(note)
                 return .none
 
             case let .deleteNoteTapped(note):
@@ -83,35 +94,27 @@ struct NoteListScreenReducer {
 
             case let .saveNote(note):
                 state.filterCategory = note.category
-                state.selectedNote = nil
-                state.isEditingNote = false
-                state.pendingNewNote = false
+                state.presentedSheet = nil
                 return .run { send in
                     try await noteStore.saveNote(note)
                     let notes = try await noteStore.fetchNotes()
                     await send(.notesLoaded(notes))
                 }
 
-            case .dismissNoteView:
-                state.selectedNote = nil
-                state.isEditingNote = false
-                state.pendingNewNote = false
+            case .dismissSheet:
+                state.presentedSheet = nil
                 return .none
-                
+
             case .scrollBegin:
                 state.isScrolling = true
                 return .none
-                
+
             case .scrollEnd:
                 state.isScrolling = false
                 return .none
 
             case .sortButtonTapped:
-                state.isSortSheetPresented = true
-                return .none
-
-            case .dismissSortSheet:
-                state.isSortSheetPresented = false
+                state.presentedSheet = .sort
                 return .none
 
             case let .sortTypeChanged(sortType):

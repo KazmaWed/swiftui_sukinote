@@ -12,13 +12,13 @@ struct NoteListScreen: View {
     @Bindable var store: StoreOf<NoteListScreenReducer>
     @State private var fabSize: CGSize = .zero
     @State private var screenWidth: CGFloat = 0
-    
+    @State private var bottomSafeArea: CGFloat = 0
+
     // MARK: - Layout Constants
     private let animationDuration: Double = 0.3
     private let highlightAnimationDuration: Double = 0.1
-    private let bottomPadding: Double = 28
     private let horizontalPadding: CGFloat = 12
-    private let spacingBetweenFABAndDial: CGFloat = 4
+    private let spacingBetweenFABAndDial: CGFloat = 8
     
     private var compactDialWidth: CGFloat {
         max(
@@ -52,7 +52,7 @@ struct NoteListScreen: View {
                     onNoteDelete: { note in
                         store.send(.deleteNoteTapped(note))
                     },
-                    bottomPadding: fabSize.height + bottomPadding
+                    bottomPadding: fabSize.height + bottomSafeArea
                 )
                 .animation(
                     .easeInOut(duration: animationDuration),
@@ -76,20 +76,25 @@ struct NoteListScreen: View {
                 .overlay(alignment: .bottom) {
                     bottomOverlay
                 }
-                .sheet(isPresented: detailSheetBinding) {
-                    detailSheet
-                }
-                .sheet(isPresented: editSheetBinding) {
-                    editSheet
-                }
-                .sheet(isPresented: sortSheetBinding) {
-                    sortSheet
+                .sheet(item: Binding(
+                    get: { store.presentedSheet },
+                    set: { newValue in
+                        if newValue == nil {
+                            store.send(.dismissSheet)
+                        }
+                    }
+                )) { _ in
+                    presentedSheetView
                 }
                 .onAppear {
                     screenWidth = geometry.size.width
+                    bottomSafeArea = geometry.safeAreaInsets.bottom
                 }
                 .onChange(of: geometry.size.width) { _, newWidth in
                     screenWidth = newWidth
+                }
+                .onChange(of: geometry.safeAreaInsets.bottom) { _, newBottom in
+                    bottomSafeArea = newBottom
                 }
             }
         }
@@ -174,71 +179,34 @@ struct NoteListScreen: View {
     }
     
     // MARK: - Sheets
-    private var detailSheetBinding: Binding<Bool> {
-        Binding(
-            get: {
-                store.selectedNote != nil && !store.isEditingNote
-            },
-            set: { isPresented in
-                if !isPresented { store.send(.dismissNoteView) }
-            }
-        )
-    }
-    
     @ViewBuilder
-    private var detailSheet: some View {
-        if let note = store.selectedNote {
+    private var presentedSheetView: some View {
+        switch store.presentedSheet {
+        case .detail(let note):
             NoteDetailScreen(note: note) {
                 store.send(.editNoteTapped(note))
             }
-        }
-    }
-    
-    private var editSheetBinding: Binding<Bool> {
-        Binding(
-            get: {
-                (store.selectedNote != nil && store.isEditingNote)
-                    || store.pendingNewNote
-            },
-            set: { isPresented in
-                if !isPresented {
-                    store.send(.dismissNoteView)
-                }
+        case .edit(let note):
+            NoteEditScreen(
+                noteToEdit: note,
+                defaultCategory: store.filterCategory
+            ) { newNote in
+                store.send(.saveNote(newNote))
             }
-        )
-    }
-    
-    private var editSheet: some View {
-        NoteEditScreen(
-            noteToEdit: store.isEditingNote ? store.selectedNote : nil,
-            defaultCategory: store.filterCategory
-        ) { newNote in
-            store.send(.saveNote(newNote))
-        }
-    }
-
-    private var sortSheetBinding: Binding<Bool> {
-        Binding(
-            get: { store.isSortSheetPresented },
-            set: { isPresented in
-                if !isPresented {
-                    store.send(.dismissSortSheet)
-                }
-            }
-        )
-    }
-
-    private var sortSheet: some View {
-        NoteSortSheet(
-            selectedSortType: Binding(
-                get: { store.sortType },
-                set: { store.send(.sortTypeChanged($0)) }
-            ),
-            selectedSortOrder: Binding(
-                get: { store.sortOrder },
-                set: { store.send(.sortOrderChanged($0)) }
+        case .sort:
+            NoteSortSheet(
+                selectedSortType: Binding(
+                    get: { store.sortType },
+                    set: { store.send(.sortTypeChanged($0)) }
+                ),
+                selectedSortOrder: Binding(
+                    get: { store.sortOrder },
+                    set: { store.send(.sortOrderChanged($0)) }
+                )
             )
-        )
+        case .none:
+            EmptyView()
+        }
     }
 }
 
