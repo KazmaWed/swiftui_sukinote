@@ -2,6 +2,20 @@
 
 A SwiftUI-based note-taking app for remembering everything about a person you care about. Keep track of their preferences, special dates, and important details organized by life categories.
 
+## Screenshots
+
+<p align="center">
+  <img src="docs/images/screenshot_top.png" width="240" alt="Main Screen">
+  <img src="docs/images/screenshot_filter.png" width="240" alt="Category Filter">
+  <img src="docs/images/screenshot_detail.png" width="240" alt="Note Detail">
+</p>
+
+<p align="center">
+  <img src="docs/images/screenshot_create.png" width="240" alt="Create Note">
+  <img src="docs/images/screenshot_sort.png" width="240" alt="Sort Options">
+  <img src="docs/images/screenshot_theme.png" width="240" alt="Theme Settings">
+</p>
+
 ## Features
 
 ### Core Functionality
