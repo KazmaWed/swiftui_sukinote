@@ -37,6 +37,7 @@ struct SettingSheet: View {
                     Text("App Information")
                 }
             }
+            .scrollContentBackground(.hidden)
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

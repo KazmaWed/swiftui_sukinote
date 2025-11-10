@@ -15,44 +15,42 @@ struct NotesListView: View {
     var bottomPadding: CGFloat = 0
 
     var body: some View {
-        if notes.isEmpty {
-            VStack {
-                Text("No note.")
-                    .foregroundColor(.secondary)
-            }
-            .frame(
-                maxWidth: .infinity,
-                maxHeight: .infinity,
-                alignment: .center
+        List(notes, id: \.id) { note in
+            NoteListItemView(
+                note: note,
+                onTap: {
+                    onNoteTap(note)
+                },
+                onEdit: {
+                    onNoteEdit(note)
+                },
+                onDelete: {
+                    onNoteDelete(note)
+                }
             )
-            .background(Color(.systemGroupedBackground))
-            .transition(.opacity)
-        } else {
-            List(notes, id: \.id) { note in
-                NoteListItemView(
-                    note: note,
-                    onTap: {
-                        onNoteTap(note)
-                    },
-                    onEdit: {
-                        onNoteEdit(note)
-                    },
-                    onDelete: {
-                        onNoteDelete(note)
-                    }
+            .transition(
+                .asymmetric(
+                    insertion: .scale(scale: 0.8).combined(with: .opacity),
+                    removal: .scale(scale: 0.8).combined(with: .opacity)
                 )
-                .transition(
-                    .asymmetric(
-                        insertion: .scale(scale: 0.8).combined(with: .opacity),
-                        removal: .scale(scale: 0.8).combined(with: .opacity)
-                    )
-                )
+            )
+        }
+        .listStyle(.plain)
+        .safeAreaInset(edge: .bottom) {
+            Color.clear.frame(height: bottomPadding)
+        }
+        .overlay {
+            if notes.isEmpty {
+                VStack {
+                    Text("No note.")
+                        .foregroundColor(.secondary)
+                        .font(.headline)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .safeAreaInset(edge: .bottom) {
+                    Color.clear.frame(height: bottomPadding)
+                }
             }
-            .listStyle(.plain)
-            .safeAreaInset(edge: .bottom) {
-                Color.clear.frame(height: bottomPadding)
-            }
-            .transition(.opacity)
         }
     }
 }

@@ -24,7 +24,7 @@ struct GlassSnapDialItem {
         self.highlightColor = highlightColor
         self.highlightedIcon = highlightedIcon
     }
-    
+
     // Static factory method for "All" item
     static var all: GlassSnapDialItem {
         GlassSnapDialItem(
@@ -37,28 +37,59 @@ struct GlassSnapDialItem {
 }
 
 class GlassSnapDial: UIScrollView, UIGestureRecognizerDelegate {
-    // Delayed onScrollEnd invocation
-    var collapseDelay: TimeInterval = 1.2
-    private var scrollEndWorkItem: DispatchWorkItem?
-    private var isProgrammaticScroll: Bool = false
 
-    // MARK: - Properties
+    // MARK: - Public Configuration
+    
+    var animationDuration: TimeInterval = 0.3
+    var collapseDelay: TimeInterval = 1.2
+    var hapticsEnabled: Bool = true
+
+    // MARK: - Selection Appearance Configuration
+    
+    var deselectedItemHeight: CGFloat = 52
+    var selectedItemHeight: CGFloat = 60
+    var deselectedScale: CGFloat = 1.0
+    var selectedScale: CGFloat = 1.08
+    var deselectedTintColor: UIColor = .label
+    var selectedTintColor: UIColor = .systemBlue
+    var deselectedBackgroundColor: UIColor = .clear
+    var selectedBackgroundColor: UIColor = UIColor.systemBlue
+        .withAlphaComponent(0.12)
+    var selectionAnimationDuration: TimeInterval = 0.22
+
+    // MARK: - Callbacks
+    
+    var onCenteredItemChanged: ((Int) -> Void)?
+    var onScrollBegin: (() -> Void)?
+    var onScrollEnd: ((Int) -> Void)?
+    var onTap: ((Int) -> Void)?
+
+    // MARK: - Private UI Components
+    
     private let contentStackView: UIStackView = {
         let stack = UIStackView()
         stack.axis = .horizontal
         stack.distribution = .fillEqually
-        // Center arranged subviews vertically so they auto-center within given frame height
         stack.alignment = .center
         stack.spacing = 0
         stack.translatesAutoresizingMaskIntoConstraints = false
         return stack
     }()
 
+    private let selectionFeedbackGenerator = UISelectionFeedbackGenerator()
+
+    // MARK: - Private State
+    
+    var currentCenteredIndex: Int = -1  // Internal visibility for SwiftUI bridge
     private var childViews: [UIView] = []
-    private var currentCenteredIndex: Int = -1
     private var previousBounds: CGRect = .zero
     private var isUserScrolling: Bool = false
-    // Keep references to per-item views to animate selection changes
+    private var isProgrammaticScroll: Bool = false
+    private var scrollEndWorkItem: DispatchWorkItem?
+    private var itemComponents: [ItemComponents] = []
+
+    // MARK: - Nested Types
+    
     private struct ItemComponents {
         let container: UIView
         let imageView: UIImageView
@@ -68,35 +99,9 @@ class GlassSnapDial: UIScrollView, UIGestureRecognizerDelegate {
         let highlightedIcon: UIImage?
         let highlightColor: UIColor
     }
-    private var itemComponents: [ItemComponents] = []
-
-    // Configuration
-    var animationDuration: TimeInterval = 0.3
-    // Selection appearance configuration
-    var deselectedItemHeight: CGFloat = 52
-    var selectedItemHeight: CGFloat = 60
-    var deselectedTintColor: UIColor = .label
-    var selectedTintColor: UIColor = .systemBlue
-    var deselectedBackgroundColor: UIColor = .clear
-    var selectedBackgroundColor: UIColor = UIColor.systemBlue
-        .withAlphaComponent(0.12)
-    var selectionAnimationDuration: TimeInterval = 0.22
-    var selectedScale: CGFloat = 1.08
-    var deselectedScale: CGFloat = 1.0
-    // Extra height applied to selected item compared to deselected height
-    var selectedHeightExtra: CGFloat = 8
-    // Haptics
-    var hapticsEnabled: Bool = true
-    private let selectionFeedbackGenerator = UISelectionFeedbackGenerator()
-
-    // Callbacks
-    var onCenteredItemChanged: ((Int) -> Void)?
-    var onScrollBegin: (() -> Void)?
-    var onScrollEnd: ((Int) -> Void)?
-    var onTap: ((Int) -> Void)?
-    var onDistanceChanged: ((Int, CGFloat) -> Void)?  // (index, distance from center)
 
     // MARK: - Initialization
+    
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupView()
@@ -108,18 +113,21 @@ class GlassSnapDial: UIScrollView, UIGestureRecognizerDelegate {
     }
 
     // MARK: - Setup
+    
     private func setupView() {
         showsHorizontalScrollIndicator = false
         showsVerticalScrollIndicator = false
         isPagingEnabled = false
-        bounces = true
+        bounces = false
         decelerationRate = UIScrollView.DecelerationRate(rawValue: 0.0)
         delegate = self
 
         addSubview(contentStackView)
 
         // Use a height constraint with lower priority to avoid conflicts
-        let heightConstraint = contentStackView.heightAnchor.constraint(equalTo: heightAnchor)
+        let heightConstraint = contentStackView.heightAnchor.constraint(
+            equalTo: heightAnchor
+        )
         heightConstraint.priority = .defaultHigh  // Lower priority to allow flexibility
 
         NSLayoutConstraint.activate([
@@ -129,7 +137,9 @@ class GlassSnapDial: UIScrollView, UIGestureRecognizerDelegate {
             contentStackView.bottomAnchor.constraint(equalTo: bottomAnchor),
             heightConstraint,
             // Ensure minimum height to prevent collapsing to 0
-            contentStackView.heightAnchor.constraint(greaterThanOrEqualToConstant: 50),
+            contentStackView.heightAnchor.constraint(
+                greaterThanOrEqualToConstant: selectedItemHeight
+            ),
         ])
     }
 
@@ -170,6 +180,7 @@ class GlassSnapDial: UIScrollView, UIGestureRecognizerDelegate {
     }
 
     // MARK: - Public Methods
+    
     /// Build dial from item models (icon + label)
     /// - Parameters:
     ///   - items: Array of GlassSnapDialItem
@@ -185,9 +196,8 @@ class GlassSnapDial: UIScrollView, UIGestureRecognizerDelegate {
         spacing: CGFloat = 8,
         centerVertically: Bool = true
     ) {
-        // Sync heights from itemSize; highlight (container) height equals itemSize.height for all states
         deselectedItemHeight = itemSize.height
-        selectedItemHeight = deselectedItemHeight  // no extra height for selected
+        selectedItemHeight = deselectedItemHeight
 
         // Build item views and keep references for selection styling
         itemComponents.removeAll()
@@ -201,7 +211,7 @@ class GlassSnapDial: UIScrollView, UIGestureRecognizerDelegate {
             let vStack = UIStackView()
             vStack.axis = .vertical
             vStack.alignment = .center
-            vStack.spacing = 2
+            vStack.spacing = 4
             vStack.translatesAutoresizingMaskIntoConstraints = false
 
             let imageView = UIImageView(
@@ -225,8 +235,6 @@ class GlassSnapDial: UIScrollView, UIGestureRecognizerDelegate {
             let heightConstraint = container.heightAnchor.constraint(
                 equalToConstant: deselectedItemHeight
             )
-            // Lower priority to avoid conflicts during layout transitions
-            heightConstraint.priority = .defaultHigh
 
             NSLayoutConstraint.activate([
                 container.widthAnchor.constraint(
@@ -261,11 +269,11 @@ class GlassSnapDial: UIScrollView, UIGestureRecognizerDelegate {
             )
             return container
         }
-
+        
         contentStackView.alignment = centerVertically ? .center : .fill
+        
         setSpacing(spacing)
         setChildViews(views)
-        // Apply initial selection style
         applySelectionStyles(animated: false)
     }
 
@@ -346,10 +354,10 @@ class GlassSnapDial: UIScrollView, UIGestureRecognizerDelegate {
         let targetCenterX = targetView.frame.midX
         let targetOffsetX = targetCenterX - bounds.width / 2
         isProgrammaticScroll = true
-        
+
         // Cancel any pending scroll end work item
         scrollEndWorkItem?.cancel()
-        
+
         if animated {
             UIView.animate(
                 withDuration: animationDuration,
@@ -401,10 +409,14 @@ class GlassSnapDial: UIScrollView, UIGestureRecognizerDelegate {
 }
 
 // MARK: - Selection Styling
+
 extension GlassSnapDial {
     /// Blend a color with white to create a lighter, opaque version
     private func blendWithWhite(_ color: UIColor, amount: CGFloat) -> UIColor {
-        var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        var alpha: CGFloat = 0
         color.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
 
         // Blend with white
@@ -412,7 +424,12 @@ extension GlassSnapDial {
         let blendedGreen = green + (1.0 - green) * amount
         let blendedBlue = blue + (1.0 - blue) * amount
 
-        return UIColor(red: blendedRed, green: blendedGreen, blue: blendedBlue, alpha: 1.0)
+        return UIColor(
+            red: blendedRed,
+            green: blendedGreen,
+            blue: blendedBlue,
+            alpha: 1.0
+        )
     }
 
     fileprivate func applySelectionStyles(animated: Bool) {
@@ -424,7 +441,10 @@ extension GlassSnapDial {
                 comp.heightConstraint.constant = self.deselectedItemHeight
                 if selected {
                     // Mix highlightColor with white to create a light, opaque background
-                    let lightTint = self.blendWithWhite(comp.highlightColor, amount: 0.85)
+                    let lightTint = self.blendWithWhite(
+                        comp.highlightColor,
+                        amount: 0.85
+                    )
                     comp.container.backgroundColor = lightTint
                 } else {
                     comp.container.backgroundColor =
@@ -613,7 +633,7 @@ struct GlassSnapDialView: View {
             onScrollBegin: {
                 if compactEnabled {
                     collapseTask?.cancel()
-                    withAnimation(.easeOut(duration: animationDuration)) { 
+                    withAnimation(.easeOut(duration: animationDuration)) {
                         isCompact = false
                     }
                 }
@@ -623,7 +643,7 @@ struct GlassSnapDialView: View {
                 if compactEnabled {
                     // Call the callback immediately when starting to collapse
                     onScrollEnd?(idx)
-                    withAnimation(.easeOut(duration: animationDuration)) { 
+                    withAnimation(.easeOut(duration: animationDuration)) {
                         isCompact = true
                     }
                 } else {
@@ -635,18 +655,21 @@ struct GlassSnapDialView: View {
                     collapseTask?.cancel()
                     // Call onScrollBegin when expanding via tap
                     onScrollBegin?()
-                    withAnimation(.easeOut(duration: animationDuration)) { 
+                    withAnimation(.easeOut(duration: animationDuration)) {
                         isCompact = false
                     }
                     let task = DispatchWorkItem {
                         // Call the callback immediately when starting to collapse
                         onScrollEnd?(idx)
-                        withAnimation(.easeOut(duration: animationDuration)) { 
+                        withAnimation(.easeOut(duration: animationDuration)) {
                             isCompact = true
                         }
                     }
                     collapseTask = task
-                    DispatchQueue.main.asyncAfter(deadline: .now() + collapseDelay, execute: task)
+                    DispatchQueue.main.asyncAfter(
+                        deadline: .now() + collapseDelay,
+                        execute: task
+                    )
                 }
                 onTap?(idx)
             },
@@ -657,20 +680,24 @@ struct GlassSnapDialView: View {
     var body: some View {
         let fadeWidth: CGFloat = 20  // Edge fade width in pixels
 
-        let base = dialContent
+        let base =
+            dialContent
             .frame(width: (compactEnabled && isCompact) ? compactWidth : nil)
-            .onAppear { 
+            .onAppear {
                 isCompact = initialCompact
             }
             .mask(
                 GeometryReader { geometry in
-                    let fadeLocation = min(0.1, max(0.0, fadeWidth / geometry.size.width))
+                    let fadeLocation = min(
+                        0.1,
+                        max(0.0, fadeWidth / geometry.size.width)
+                    )
                     LinearGradient(
                         gradient: Gradient(stops: [
                             .init(color: .clear, location: 0.0),
                             .init(color: .white, location: fadeLocation),
                             .init(color: .white, location: 1.0 - fadeLocation),
-                            .init(color: .clear, location: 1.0)
+                            .init(color: .clear, location: 1.0),
                         ]),
                         startPoint: .leading,
                         endPoint: .trailing
@@ -681,7 +708,10 @@ struct GlassSnapDialView: View {
         // Replace previous experimental Button(.glass) overlay (which could appear flat/white) with
         // a consistent reusable glass surface (material + stroke + highlight) for visual parity.
         if useButtonGlassBackground {
-            let effectiveRadius = min(buttonCornerRadius, max(itemSize.height / 2, 4))
+            let effectiveRadius = min(
+                buttonCornerRadius,
+                max(itemSize.height / 2, 4)
+            )
             Group {
                 if #available(iOS 18.0, *) {
                     base.background {
@@ -752,11 +782,26 @@ struct GlassSnapDialView: View {
                     self.onCenteredItemChanged?(index)
                 }
             }
-            dial.onScrollBegin = { DispatchQueue.main.async { self.onScrollBegin?() } }
-            dial.onScrollEnd = { index in DispatchQueue.main.async { self.onScrollEnd?(index) } }
-            dial.onTap = { index in DispatchQueue.main.async { self.onTap?(index); self.selected = index } }
+            dial.onScrollBegin = {
+                DispatchQueue.main.async { self.onScrollBegin?() }
+            }
+            dial.onScrollEnd = { index in
+                DispatchQueue.main.async { self.onScrollEnd?(index) }
+            }
+            dial.onTap = { index in
+                DispatchQueue.main.async {
+                    self.onTap?(index)
+                    self.selected = index
+                }
+            }
 
-            dial.setItems(items, itemSize: itemSize, font: font, tintColor: tintColor, spacing: spacing)
+            dial.setItems(
+                items,
+                itemSize: itemSize,
+                font: font,
+                tintColor: tintColor,
+                spacing: spacing
+            )
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 dial.scrollToIndex(self.initialIndex, animated: false)
                 context.coordinator.lastSelected = self.initialIndex
@@ -783,7 +828,13 @@ struct GlassSnapDialView: View {
                 tint: tintColor
             )
             if context.coordinator.lastConfig != newConfig {
-                uiView.setItems(items, itemSize: itemSize, font: font, tintColor: tintColor, spacing: spacing)
+                uiView.setItems(
+                    items,
+                    itemSize: itemSize,
+                    font: font,
+                    tintColor: tintColor,
+                    spacing: spacing
+                )
                 context.coordinator.lastConfig = newConfig
             }
             // If SwiftUI binding 'selected' changed externally (e.g., save -> filter update), scroll to match
@@ -828,7 +879,7 @@ struct GlassSnapDialView: View {
         var body: some View {
 
             let animationDuration: TimeInterval = 0.3
-            
+
             VStack(spacing: 16) {
                 GlassSnapDialView(
                     items: [GlassSnapDialItem.all] + items,
