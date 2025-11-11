@@ -18,6 +18,7 @@ struct NoteListItemView: View {
             Image(systemName: note.category.iconFilled)
                 .imageScale(.large)
                 .foregroundStyle(note.category.highlightColor)
+                .frame(width: 24, alignment: .center)
             VStack(alignment: .leading, spacing: 4) {
                 Text(note.title.isEmpty ? "No Title" : note.title)
                     .font(.headline)
