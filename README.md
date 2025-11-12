@@ -5,7 +5,7 @@ A SwiftUI-based note-taking app for remembering everything about a person you ca
 ## Screenshots
 
 <p align="center">
-  <img src="docs/images/screenshot_top.png" width="240" alt="Main Screen">
+  <img src="docs/images/filter_sort.gif" width="240" alt="Main Screen">
   <img src="docs/images/screenshot_filter.png" width="240" alt="Category Filter">
   <img src="docs/images/screenshot_detail.png" width="240" alt="Note Detail">
 </p>
