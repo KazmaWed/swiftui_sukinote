@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		5D68966F2EDB1F5E00397C4E /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 5D68966E2EDB1F5E00397C4E /* FirebaseAnalytics */; };
+		5D6896712EDB1F5E00397C4E /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = 5D6896702EDB1F5E00397C4E /* FirebaseCrashlytics */; };
 		5D69AF4A2EB4FD0D00504482 /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = 5D69AF492EB4FD0D00504482 /* ComposableArchitecture */; };
 /* End PBXBuildFile section */
 
@@ -32,6 +34,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5D6896712EDB1F5E00397C4E /* FirebaseCrashlytics in Frameworks */,
+				5D68966F2EDB1F5E00397C4E /* FirebaseAnalytics in Frameworks */,
 				5D69AF4A2EB4FD0D00504482 /* ComposableArchitecture in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -66,6 +70,7 @@
 				5D69AE9E2EABB5EF00504482 /* Sources */,
 				5D69AE9F2EABB5EF00504482 /* Frameworks */,
 				5D69AEA02EABB5EF00504482 /* Resources */,
+				5D6896722EDB23AD00397C4E /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -78,6 +83,8 @@
 			name = SUKINOTE;
 			packageProductDependencies = (
 				5D69AF492EB4FD0D00504482 /* ComposableArchitecture */,
+				5D68966E2EDB1F5E00397C4E /* FirebaseAnalytics */,
+				5D6896702EDB1F5E00397C4E /* FirebaseCrashlytics */,
 			);
 			productName = SUKINOTE;
 			productReference = 5D69AEA22EABB5EF00504482 /* SUKINOTE.app */;
@@ -109,6 +116,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				5D69AF482EB4FD0D00504482 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */,
+				5D68966D2EDB1F5E00397C4E /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 5D69AEA32EABB5EF00504482 /* Products */;
@@ -129,6 +137,31 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		5D6896722EDB23AD00397C4E /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}",
+				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${PRODUCT_NAME}",
+				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Info.plist",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/GoogleService-Info.plist",
+				"$(TARGET_BUILD_DIR)/$(EXECUTABLE_PATH)",
+			);
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\n\"${BUILD_DIR%/Build/*}/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/run\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		5D69AE9E2EABB5EF00504482 /* Sources */ = {
@@ -350,6 +383,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		5D68966D2EDB1F5E00397C4E /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.6.0;
+			};
+		};
 		5D69AF482EB4FD0D00504482 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/pointfreeco/swift-composable-architecture";
@@ -361,6 +402,16 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		5D68966E2EDB1F5E00397C4E /* FirebaseAnalytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 5D68966D2EDB1F5E00397C4E /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAnalytics;
+		};
+		5D6896702EDB1F5E00397C4E /* FirebaseCrashlytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 5D68966D2EDB1F5E00397C4E /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCrashlytics;
+		};
 		5D69AF492EB4FD0D00504482 /* ComposableArchitecture */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 5D69AF482EB4FD0D00504482 /* XCRemoteSwiftPackageReference "swift-composable-architecture" */;
