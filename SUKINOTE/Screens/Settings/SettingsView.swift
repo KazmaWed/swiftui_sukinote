@@ -1,5 +1,5 @@
 //
-//  SettingSheet.swift
+//  SettingsView.swift
 //  SUKINOTE
 //
 //  Created by Kazma Wed on 2025/11/10.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct SettingScreen: View {
+struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @AppStorage("appTheme") private var selectedTheme: AppTheme = .system
 
@@ -55,5 +55,5 @@ struct SettingScreen: View {
 }
 
 #Preview {
-    SettingScreen()
+    SettingsView()
 }

@@ -34,20 +34,20 @@ A SwiftUI-based note-taking app for remembering everything about a person you ca
 
 ## Screens
 
-### NoteListScreen
+### NoteListView
 Main screen displaying all notes about your loved ones with filtering and sorting capabilities.
 - Category filter dial at the bottom
 - Floating action buttons for sorting and adding notes
 - Swipe actions for editing and deleting notes
 - Empty state display when no notes exist
 
-### NoteDetailScreen
+### NoteDetailView
 Read-only view of a single note showing full details about a person.
 - Display title, content, category, and creation date
 - Shows anniversary date if applicable
 - Option to edit from detail view
 
-### NoteEditScreen
+### NoteEditView
 Create or edit notes about people you care about with form validation.
 - Text fields for title and content
 - Category picker

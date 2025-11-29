@@ -1,5 +1,5 @@
 //
-//  EditView.swift
+//  NoteEditView.swift
 //  SUKINOTE
 //
 //  Created by Kazma Wed on 2025/10/26.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct NoteEditScreen: View {
+struct NoteEditView: View {
     @Environment(\.dismiss) var dismiss
     var noteToEdit: Note?
     var defaultCategory: NoteCategory? = nil
@@ -199,5 +199,5 @@ struct NoteEditScreen: View {
 }
 
 #Preview {
-    NoteEditScreen { _ in }
+    NoteEditView { _ in }
 }

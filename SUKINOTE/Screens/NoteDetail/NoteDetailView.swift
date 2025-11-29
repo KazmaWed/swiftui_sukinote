@@ -1,5 +1,5 @@
 //
-//  NoteDetailScreen.swift
+//  NoteDetailView.swift
 //  SUKINOTE
 //
 //  Created by Kazma Wed on 2025/11/08.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct NoteDetailScreen: View {
+struct NoteDetailView: View {
     @Environment(\.dismiss) var dismiss
     let note: Note
     var onEdit: () -> Void  // Callback to switch to edit mode
@@ -153,7 +153,7 @@ struct NoteDetailScreen: View {
 }
 
 #Preview {
-    NoteDetailScreen(
+    NoteDetailView(
         note: Note(
             category: .like,
             title: "Sample Note",

@@ -1,5 +1,5 @@
 //
-//  ContentView.swift
+//  NoteListView.swift
 //  SUKINOTE
 //
 //  Created by Kazma Wed on 2025/10/24.
@@ -8,8 +8,8 @@
 import ComposableArchitecture
 import SwiftUI
 
-struct NoteListScreen: View {
-    @Bindable var store: StoreOf<NoteListScreenReducer>
+struct NoteListView: View {
+    @Bindable var store: StoreOf<NoteListFeature>
     @State private var fabSize: CGSize = .zero
     @State private var screenWidth: CGFloat = 0
     @State private var bottomSafeArea: CGFloat = 0
@@ -41,7 +41,7 @@ struct NoteListScreen: View {
     var body: some View {
         GeometryReader { geometry in
             NavigationStack {
-                NotesListView(
+                NoteListContent(
                     notes: filteredNotes,
                     onNoteTap: { note in
                         store.send(.noteTapped(note))
@@ -192,11 +192,11 @@ struct NoteListScreen: View {
     private var presentedSheetView: some View {
         switch store.presentedSheet {
         case .detail(let note):
-            NoteDetailScreen(note: note) {
+            NoteDetailView(note: note) {
                 store.send(.editNoteTapped(note))
             }
         case .edit(let note):
-            NoteEditScreen(
+            NoteEditView(
                 noteToEdit: note,
                 defaultCategory: store.filterCategory
             ) { newNote in
@@ -214,9 +214,9 @@ struct NoteListScreen: View {
                 )
             )
         case .settings:
-            SettingScreen()
+            SettingsView()
         case .personSelector:
-            PersonSelectorScreen()
+            PersonSelectorView()
         case .none:
             EmptyView()
         }
@@ -224,14 +224,14 @@ struct NoteListScreen: View {
 }
 
 #Preview {
-    NoteListScreen(
+    NoteListView(
         store: Store(
-            initialState: NoteListScreenReducer.State(
+            initialState: NoteListFeature.State(
                 notes: MockData.sampleNotes,
                 filterCategory: nil  // "All" selected by default
             )
         ) {
-            NoteListScreenReducer()
+            NoteListFeature()
         } withDependencies: { values in
             // Override NoteStore for previews to return the sample notes
             values.noteStore = NoteStore(

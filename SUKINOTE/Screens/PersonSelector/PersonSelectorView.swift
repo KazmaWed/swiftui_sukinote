@@ -1,5 +1,5 @@
 //
-//  PersonSelectorSheet.swift
+//  PersonSelectorView.swift
 //  SUKINOTE
 //
 //  Created by Kazma Wed on 2025/11/10.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct PersonSelectorScreen: View {
+struct PersonSelectorView: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -45,5 +45,5 @@ struct PersonSelectorScreen: View {
 }
 
 #Preview {
-    PersonSelectorScreen()
+    PersonSelectorView()
 }

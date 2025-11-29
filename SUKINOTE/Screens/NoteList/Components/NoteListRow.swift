@@ -1,5 +1,5 @@
 //
-//  NoteRowView.swift
+//  NoteListRow.swift
 //  SUKINOTE
 //
 //  Created by Kazma Wed on 2025/10/26.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct NoteListItemView: View {
+struct NoteListRow: View {
     let note: Note
     let onTap: () -> Void
     let onEdit: () -> Void
@@ -57,7 +57,7 @@ struct NoteListItemView: View {
 
 #Preview {
     List {
-        NoteListItemView(
+        NoteListRow(
             note: Note(
                 category: .like,
                 title: "Sample Note",

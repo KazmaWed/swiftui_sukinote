@@ -1,5 +1,5 @@
 //
-//  NotesListComponent.swift
+//  NoteListContent.swift
 //  SUKINOTE
 //
 //  Created by Kazma Wed on 2025/10/26.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct NotesListView: View {
+struct NoteListContent: View {
     let notes: [Note]
     let onNoteTap: (Note) -> Void
     let onNoteEdit: (Note) -> Void
@@ -16,7 +16,7 @@ struct NotesListView: View {
 
     var body: some View {
         List(notes, id: \.id) { note in
-            NoteListItemView(
+            NoteListRow(
                 note: note,
                 onTap: {
                     onNoteTap(note)
@@ -56,7 +56,7 @@ struct NotesListView: View {
 }
 
 #Preview {
-    NotesListView(
+    NoteListContent(
         notes: [
             // like (2)
             Note(category: .like, title: "Like • Coffee", content: "Flat white"),

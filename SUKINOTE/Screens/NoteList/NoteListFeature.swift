@@ -1,5 +1,5 @@
 //
-//  NoteListScreenReducer.swift
+//  NoteListFeature.swift
 //  SUKINOTE
 //
 //  Created by Kazma Wed on 2025/10/31.
@@ -9,7 +9,7 @@ import ComposableArchitecture
 import Foundation
 
 @Reducer
-struct NoteListScreenReducer {
+struct NoteListFeature {
     enum SheetType: Equatable, Identifiable {
         case detail(Note)
         case edit(Note?)

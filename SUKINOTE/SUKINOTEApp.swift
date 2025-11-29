@@ -27,14 +27,14 @@ struct SUKINOTEApp: App {
 
     // Shared Store that persists across theme changes
     let store = Store(
-        initialState: NoteListScreenReducer.State()
+        initialState: NoteListFeature.State()
     ) {
-        NoteListScreenReducer()
+        NoteListFeature()
     }
 
     var body: some Scene {
         WindowGroup {
-            NoteListScreen(store: store)
+            NoteListView(store: store)
                 .preferredColorScheme(selectedTheme.colorScheme)
         }
         .modelContainer(sharedModelContainer)
