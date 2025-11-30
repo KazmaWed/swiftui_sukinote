@@ -10,6 +10,8 @@ import Foundation
 
 @Reducer
 struct NoteListFeature {
+    @Dependency(\.analyticsClient) var analytics
+
     enum SheetType: Equatable, Identifiable {
         case detail(Note)
         case edit(Note?)
@@ -73,7 +75,7 @@ struct NoteListFeature {
                     await send(.notesLoaded(notes))
                 }
 
-            case let .notesLoaded(notes):
+            case .notesLoaded(let notes):
                 state.notes = notes
                 return .none
 
@@ -81,26 +83,27 @@ struct NoteListFeature {
                 state.presentedSheet = .edit(nil)
                 return .none
 
-            case let .categorySelected(category):
+            case .categorySelected(let category):
                 state.filterCategory = category
                 return .none
 
-            case let .noteTapped(note):
+            case .noteTapped(let note):
                 state.presentedSheet = .detail(note)
                 return .none
 
-            case let .editNoteTapped(note):
+            case .editNoteTapped(let note):
                 state.presentedSheet = .edit(note)
                 return .none
 
-            case let .deleteNoteTapped(note):
+            case .deleteNoteTapped(let note):
                 return .run { send in
                     try await noteStore.deleteNote(note)
                     let notes = try await noteStore.fetchNotes()
                     await send(.notesLoaded(notes))
                 }
 
-            case let .saveNote(note):
+            case .saveNote(let note):
+                analytics.logSaveNote(note.toAnalyticsParams())
                 state.filterCategory = note.category
                 state.presentedSheet = nil
                 return .run { send in
@@ -125,7 +128,7 @@ struct NoteListFeature {
                 state.presentedSheet = .sort
                 return .none
 
-            case let .sortTypeChanged(sortType):
+            case .sortTypeChanged(let sortType):
                 state.sortType = sortType
 
                 // Automatically switch category filter based on sort type
@@ -143,7 +146,7 @@ struct NoteListFeature {
 
                 return .none
 
-            case let .sortOrderChanged(sortOrder):
+            case .sortOrderChanged(let sortOrder):
                 state.sortOrder = sortOrder
                 return .none
 
@@ -158,4 +161,3 @@ struct NoteListFeature {
         }
     }
 }
-

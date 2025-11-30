@@ -40,4 +40,12 @@ final class Note: Identifiable, @unchecked Sendable {
         self.anniversaryDate = anniversaryDate
         self.isAnnual = isAnnual
     }
+
+    func toAnalyticsParams() -> [String: Any] {
+        return [
+            "category": category.displayName,
+            "titleLength": title.count,
+            "contentLength": content.count
+        ]
+    }
 }
