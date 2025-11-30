@@ -14,11 +14,14 @@ struct NoteListRow: View {
     let onDelete: () -> Void
 
     var body: some View {
-        HStack(spacing: 16) {
+        HStack {
+            // Category icon
             Image(systemName: note.category.iconFilled)
                 .imageScale(.large)
                 .foregroundStyle(note.category.highlightColor)
                 .frame(width: 24, alignment: .center)
+            Spacer().frame(width: 16)
+            // Title, Content
             VStack(alignment: .leading, spacing: 4) {
                 Text(note.title.isEmpty ? "No Title" : note.title)
                     .font(.headline)
@@ -34,7 +37,17 @@ struct NoteListRow: View {
                         .lineLimit(1)
                 }
             }
+            Spacer().frame(width: 16)
             Spacer()
+            // Image thumbnail
+            if let images = note.images, let firstImage = images.first,
+               let uiImage = UIImage(data: firstImage) {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 64, height: 48)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+            }
         }
         .background(.background)
         .onTapGesture { onTap() }
@@ -56,7 +69,15 @@ struct NoteListRow: View {
 }
 
 #Preview {
-    List {
+    let sampleImageData: Data? = {
+        if let path = Bundle.main.path(forResource: "sample_image", ofType: "jpg"),
+           let image = UIImage(contentsOfFile: path) {
+            return image.jpegData(compressionQuality: 0.8)
+        }
+        return nil
+    }()
+
+    return List {
         NoteListRow(
             note: Note(
                 category: .like,
@@ -67,5 +88,19 @@ struct NoteListRow: View {
             onEdit: {},
             onDelete: {}
         )
+
+        if let imageData = sampleImageData {
+            NoteListRow(
+                note: Note(
+                    category: .like,
+                    title: "Note with Image",
+                    content: "This note has an attached image",
+                    images: [imageData]
+                ),
+                onTap: {},
+                onEdit: {},
+                onDelete: {}
+            )
+        }
     }
 }
