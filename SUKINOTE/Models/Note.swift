@@ -17,6 +17,7 @@ final class Note: Identifiable, @unchecked Sendable {
     var content: String
     var anniversaryDate: Date?
     var isAnnual: Bool?
+    @Attribute(.externalStorage) var images: [Data]?
 
     var category: NoteCategory {
         get { NoteCategory(rawValue: categoryRawValue) ?? .like }
@@ -30,7 +31,8 @@ final class Note: Identifiable, @unchecked Sendable {
         title: String,
         content: String,
         anniversaryDate: Date? = nil,
-        isAnnual: Bool? = nil
+        isAnnual: Bool? = nil,
+        images: [Data]? = nil
     ) {
         self.id = id
         self.createdAt = createdAt
@@ -39,6 +41,7 @@ final class Note: Identifiable, @unchecked Sendable {
         self.content = content
         self.anniversaryDate = anniversaryDate
         self.isAnnual = isAnnual
+        self.images = images
     }
 
     func toAnalyticsParams() -> [String: Any] {

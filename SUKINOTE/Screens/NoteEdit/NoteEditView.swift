@@ -5,6 +5,7 @@
 //  Created by Kazma Wed on 2025/10/26.
 //
 
+import PhotosUI
 import SwiftUI
 
 struct NoteEditView: View {
@@ -18,6 +19,8 @@ struct NoteEditView: View {
     @State private var content: String = ""
     @State private var anniversaryRepeat: Bool = false
     @State private var date: Date = Date()
+    @State private var pickerItems: [PhotosPickerItem] = []  // PhotosPicker temporary selection
+    @State private var images: [Data] = []  // Actual image data for storage and display
 
     init(
         noteToEdit: Note? = nil,
@@ -36,6 +39,9 @@ struct NoteEditView: View {
         )
         _title = State(initialValue: noteToEdit?.title ?? "")
         _content = State(initialValue: noteToEdit?.content ?? "")
+        _images = State(
+            initialValue: noteToEdit?.images ?? []
+        )
 
         // For anniversary notes, also get the date
         if let note = noteToEdit, note.category == .anniversary {
@@ -59,7 +65,8 @@ struct NoteEditView: View {
                 title: title,
                 content: content,
                 anniversaryDate: category == .anniversary ? date : nil,
-                isAnnual: category == .anniversary ? anniversaryRepeat : nil
+                isAnnual: category == .anniversary ? anniversaryRepeat : nil,
+                images: images.isEmpty ? nil : images
             )
         } else {
             // Create new mode
@@ -68,7 +75,8 @@ struct NoteEditView: View {
                 title: title,
                 content: content,
                 anniversaryDate: category == .anniversary ? date : nil,
-                isAnnual: category == .anniversary ? anniversaryRepeat : nil
+                isAnnual: category == .anniversary ? anniversaryRepeat : nil,
+                images: images.isEmpty ? nil : images
             )
         }
         onSave(newNote)
@@ -92,6 +100,86 @@ struct NoteEditView: View {
         }
     }
 
+    @ViewBuilder
+    private var imageAttachmentsSection: some View {
+        let thumbnailSize = CGFloat(72)
+        let cornerRadius = CGFloat(8)
+
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Images")
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    // Display selected images
+                    ForEach(images.indices, id: \.self) { index in
+                        if let uiImage = UIImage(data: images[index]) {
+                            ZStack(alignment: .topTrailing) {
+                                Image(uiImage: uiImage)
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(
+                                        width: thumbnailSize,
+                                        height: thumbnailSize
+                                    )
+                                    .clipShape(
+                                        RoundedRectangle(
+                                            cornerRadius: cornerRadius
+                                        )
+                                    )
+
+                                Button(
+                                    action: { images.remove(at: index) }
+                                ) {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .foregroundColor(.white)
+                                        .background(
+                                            Color.red.clipShape(Circle())
+                                        )
+                                }
+                                .offset(
+                                    x: -cornerRadius / 2,
+                                    y: cornerRadius / 2
+                                )
+                            }
+                        }
+                    }
+                    // Add image button
+                    PhotosPicker(
+                        selection: $pickerItems,
+                        matching: .images
+                    ) {
+                        VStack {
+                            Image(systemName: "plus")
+                                .font(.title2)
+                                .foregroundColor(.blue)
+                        }
+                        .frame(width: thumbnailSize, height: thumbnailSize)
+                        .background(Color(.systemBackground))
+                        .cornerRadius(cornerRadius)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: cornerRadius)
+                                .stroke(Color.blue, lineWidth: 1)
+
+                        )
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+        }
+        .onChange(of: pickerItems) { oldValue, newValue in
+            Task {
+                for item in newValue {
+                    if let data = try? await item.loadTransferable(
+                        type: Data.self
+                    ) {
+                        images.append(data)
+                    }
+                }
+                pickerItems.removeAll()
+            }
+        }
+    }
+
     var body: some View {
         VStack(alignment: .leading) {
             headerBar
@@ -102,6 +190,8 @@ struct NoteEditView: View {
             if category == .anniversary {
                 anniversarySection
             }
+            Spacer().frame(height: 16)
+            imageAttachmentsSection
             Spacer()
             saveButton
         }
