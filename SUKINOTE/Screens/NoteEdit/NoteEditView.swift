@@ -1,5 +1,6 @@
 import PhotosUI
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct NoteEditView: View {
     @Environment(\.dismiss) var dismiss
@@ -14,6 +15,14 @@ struct NoteEditView: View {
     @State private var date: Date = Date()
     @State private var pickerItems: [PhotosPickerItem] = []  // PhotosPicker temporary selection
     @State private var images: [Data] = []  // Actual image data for storage and display
+    @State private var isFileImporterPresented: Bool = false
+    @State private var importedFileURL: URL? = nil  // File picked for analysis
+
+    private static let importableContentTypes: [UTType] = [
+        .plainText,
+        UTType("net.daringfireball.markdown") ?? .plainText,
+        .image,
+    ]
 
     init(
         noteToEdit: Note? = nil,
@@ -174,26 +183,48 @@ struct NoteEditView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading) {
-            headerBar
-            Spacer().frame(height: 12)
-            categorySection
-            Spacer().frame(height: 16)
-            textFieldsSection
-            if category == .anniversary {
-                anniversarySection
+        NavigationStack {
+            VStack(alignment: .leading) {
+                headerBar
+                Spacer().frame(height: 12)
+                categorySection
+                Spacer().frame(height: 16)
+                textFieldsSection
+                if category == .anniversary {
+                    anniversarySection
+                }
+                Spacer().frame(height: 16)
+                imageAttachmentsSection
+                Spacer()
+                saveButton
             }
-            Spacer().frame(height: 16)
-            imageAttachmentsSection
-            Spacer()
-            saveButton
+            .frame(
+                maxWidth: .infinity,
+                maxHeight: .infinity
+            )
+            .padding()
+            .background(Color(.systemGroupedBackground))
+            .toolbar(.hidden, for: .navigationBar)
+            .fileImporter(
+                isPresented: $isFileImporterPresented,
+                allowedContentTypes: Self.importableContentTypes
+            ) { result in
+                handleFileImport(result)
+            }
+            .navigationDestination(item: $importedFileURL) { url in
+                FileAnalyzeView(fileURL: url)
+            }
         }
-        .frame(
-            maxWidth: .infinity,
-            maxHeight: .infinity
-        )
-        .padding()
-        .background(Color(.systemGroupedBackground))
+    }
+
+    /// Navigates to FileAnalyzeView with the picked file.
+    /// The file is read there, so the screen appears without waiting for downloads.
+    private func handleFileImport(_ result: Result<URL, Error>) {
+        do {
+            importedFileURL = try result.get()
+        } catch {
+            print("Failed to import file: \(error)")
+        }
     }
 
     @ViewBuilder
@@ -205,8 +236,16 @@ struct NoteEditView: View {
                 .fontWeight(.semibold)
                 .frame(maxWidth: .infinity, alignment: .center)
 
-            // Trailing close button; empty spacer on the left is implicitly handled by ZStack
+            // Leading import button, trailing close button
             HStack {
+                Button(
+                    action: { isFileImporterPresented = true }
+                ) {
+                    Text("Import")
+                        .font(.body)
+                        .fontWeight(.medium)
+                }
+                .buttonStyle(.plain)
                 Spacer()
                 Button(
                     action: { dismiss() }
