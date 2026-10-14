@@ -6,7 +6,7 @@ struct FileAnalyzeView: View {
 
     private enum LoadState {
         case loading
-        case loaded(Data)
+        case loaded(Data, json: String?)  // json is nil for non-text files
         case failed(Error)
     }
 
@@ -35,8 +35,7 @@ struct FileAnalyzeView: View {
                 .multilineTextAlignment(.center)
 
             statusView
-
-            Spacer()
+                .frame(maxHeight: .infinity, alignment: .top)
         }
         .padding()
         .frame(maxWidth: .infinity)
@@ -53,15 +52,27 @@ struct FileAnalyzeView: View {
         switch loadState {
         case .loading:
             ProgressView("Loading...")
-        case .loaded(let data):
+        case .loaded(let data, let json):
             VStack(spacing: 8) {
                 Text(data.count.formatted(.byteCount(style: .file)))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                Text("Analyze this file to create notes.\nThis feature is coming soon.")
-                    .font(.body)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
+                if let json {
+                    ScrollView {
+                        Text(json)
+                            .font(.system(.footnote, design: .monospaced))
+                            .textSelection(.enabled)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding()
+                    }
+                    .background(Color(.systemBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                } else {
+                    Text("Analyze this file to create notes.\nThis feature is coming soon.")
+                        .font(.body)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
             }
         case .failed(let error):
             VStack(spacing: 12) {
@@ -81,10 +92,24 @@ struct FileAnalyzeView: View {
     private func loadFile() async {
         loadState = .loading
         do {
-            loadState = .loaded(try await Self.readData(from: fileURL))
+            let data = try await Self.readData(from: fileURL)
+            let json =
+                contentType?.conforms(to: .image) == true
+                ? nil : try await Self.makeLineTalkJSON(from: data)
+            loadState = .loaded(data, json: json)
         } catch {
             loadState = .failed(error)
         }
+    }
+
+    /// Parses LINE chat history text into the JSON passed to LLMs.
+    /// Runs off the main actor since chat histories can be large.
+    @concurrent
+    nonisolated private static func makeLineTalkJSON(
+        from data: Data
+    ) async throws -> String {
+        let log = LineTalkParser.parse(String(decoding: data, as: UTF8.self))
+        return String(decoding: try log.jsonData(), as: UTF8.self)
     }
 
     /// Runs off the main actor because NSFileCoordinator blocks

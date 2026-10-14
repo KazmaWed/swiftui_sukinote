@@ -245,7 +245,7 @@ struct NoteEditView: View {
                         .font(.body)
                         .fontWeight(.medium)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.borderless)
                 Spacer()
                 Button(
                     action: { dismiss() }
