@@ -1,9 +1,4 @@
 import SwiftUI
-//  GlassSnapDial.swift
-//  SUKINOTE
-//
-//  Auto-generated duplicate of SnapDialView for experimentation.
-//
 import UIKit
 
 // Model representing an item in GlassSnapDial

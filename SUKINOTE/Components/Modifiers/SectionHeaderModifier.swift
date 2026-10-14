@@ -1,10 +1,3 @@
-//
-//  SectionHeaderModifier.swift
-//  SUKINOTE
-//
-//  Created by Kazma Wed on 2025/11/09.
-//
-
 import SwiftUI
 
 struct SectionHeaderModifier: ViewModifier {

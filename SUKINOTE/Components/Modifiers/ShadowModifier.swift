@@ -1,10 +1,3 @@
-//
-//  ShadowModifier.swift
-//  SUKINOTE
-//
-//  Common shadow styles for UI elements
-//
-
 import SwiftUI
 
 extension View {

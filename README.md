@@ -59,7 +59,7 @@ Create or edit notes about people you care about with form validation.
 ### Technology Stack
 - **SwiftUI**: Declarative UI framework
 - **SwiftData**: Persistent data storage with `@Model` macro
-- **The Composable Architecture (TCA)**: State management and side effects
+- **Observation**: State management with `@Observable` models
 - **UIKit Integration**: Custom UIKit components via `UIViewRepresentable`
 
 ### Data Model
@@ -96,4 +96,4 @@ Seven predefined categories for organizing information about people:
 
 ## Dependencies
 
-- [swift-composable-architecture](https://github.com/pointfreeco/swift-composable-architecture) - State management
+- [firebase-ios-sdk](https://github.com/firebase/firebase-ios-sdk) - Analytics, Crashlytics

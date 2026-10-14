@@ -1,10 +1,3 @@
-//
-//  NoteCategory.swift
-//  SUKINOTE
-//
-//  Created by Kazma Wed on 2025/10/26.
-//
-
 import SwiftUI
 
 enum NoteCategory: String, Codable, CaseIterable, Sendable {

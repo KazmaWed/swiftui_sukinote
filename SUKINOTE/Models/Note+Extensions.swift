@@ -1,10 +1,3 @@
-//
-//  Note+Sorting.swift
-//  SUKINOTE
-//
-//  Created by Kazma Wed on 2025/11/09.
-//
-
 import Foundation
 
 extension Array where Element == Note {

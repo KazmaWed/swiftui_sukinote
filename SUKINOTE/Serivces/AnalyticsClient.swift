@@ -1,4 +1,3 @@
-import Dependencies
 import FirebaseAnalytics
 
 struct AnalyticsClient {
@@ -7,8 +6,8 @@ struct AnalyticsClient {
     var setUserProperty: (String?, String) -> Void
 }
 
-extension AnalyticsClient: DependencyKey {
-    static let liveValue = Self(
+extension AnalyticsClient {
+    static let live = Self(
         logEvent: { name, params in
             Analytics.logEvent(name, parameters: params)
         },
@@ -20,16 +19,10 @@ extension AnalyticsClient: DependencyKey {
         }
     )
 
-    static let testValue = Self(
+    /// No-op client for previews and tests
+    static let noop = Self(
         logEvent: { _, _ in },
         logSaveNote: { _ in },
         setUserProperty: { _, _ in }
     )
-}
-
-extension DependencyValues {
-    var analyticsClient: AnalyticsClient {
-        get { self[AnalyticsClient.self] }
-        set { self[AnalyticsClient.self] = newValue }
-    }
 }

@@ -1,10 +1,3 @@
-//
-//  NoteDetailView.swift
-//  SUKINOTE
-//
-//  Created by Kazma Wed on 2025/11/08.
-//
-
 import SwiftUI
 
 struct NoteDetailView: View {

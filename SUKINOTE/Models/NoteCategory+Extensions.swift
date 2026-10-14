@@ -1,9 +1,3 @@
-//  NoteCategory+UI.swift
-//  SUKINOTE
-//
-//  UI-related extensions for NoteCategory (colors, etc.)
-//
-
 import SwiftUI
 import UIKit
 

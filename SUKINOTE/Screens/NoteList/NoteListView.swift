@@ -1,15 +1,7 @@
-//
-//  NoteListView.swift
-//  SUKINOTE
-//
-//  Created by Kazma Wed on 2025/10/24.
-//
-
-import ComposableArchitecture
 import SwiftUI
 
 struct NoteListView: View {
-    @Bindable var store: StoreOf<NoteListFeature>
+    @Bindable var model: NoteListModel
     @State private var fabSize: CGSize = .zero
     @State private var screenWidth: CGFloat = 0
     @State private var bottomSafeArea: CGFloat = 0
@@ -28,45 +20,35 @@ struct NoteListView: View {
         )
     }
     
-    private var filteredNotes: [Note] {
-        let filtered: [Note]
-        if let category = store.filterCategory {
-            filtered = store.notes.filter { $0.category == category }
-        } else {
-            filtered = store.notes
-        }
-        return filtered.sorted(by: store.sortType, order: store.sortOrder)
-    }
-
     var body: some View {
         GeometryReader { geometry in
             NavigationStack {
                 NoteListContent(
-                    notes: filteredNotes,
+                    notes: model.filteredNotes,
                     onNoteTap: { note in
-                        store.send(.noteTapped(note))
+                        model.noteTapped(note)
                     },
                     onNoteEdit: { note in
-                        store.send(.editNoteTapped(note))
+                        model.editNoteTapped(note)
                     },
                     onNoteDelete: { note in
-                        store.send(.deleteNoteTapped(note))
+                        Task { await model.deleteNote(note) }
                     },
                     bottomPadding: fabSize.height + bottomSafeArea
                 )
                 .animation(
                     .easeInOut(duration: animationDuration),
-                    value: store.filterCategory
+                    value: model.filterCategory
                 )
-                .onAppear {
-                    store.send(.onAppear)
+                .task {
+                    await model.onAppear()
                 }
                 .navigationTitle("Title")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .navigationBarLeading) {
                         Button(action: {
-                            store.send(.personSelectorButtonTapped)
+                            model.personSelectorButtonTapped()
                         }) {
                             Image(systemName: "person")
                                 .imageScale(.medium)
@@ -75,7 +57,7 @@ struct NoteListView: View {
 
                     ToolbarItem(placement: .navigationBarTrailing) {
                         Button(action: {
-                            store.send(.settingsButtonTapped)
+                            model.settingsButtonTapped()
                         }) {
                             Image(systemName: "gearshape")
                                 .imageScale(.medium)
@@ -85,14 +67,7 @@ struct NoteListView: View {
                 .overlay(alignment: .bottom) {
                     bottomOverlay
                 }
-                .sheet(item: Binding(
-                    get: { store.presentedSheet },
-                    set: { newValue in
-                        if newValue == nil {
-                            store.send(.dismissSheet)
-                        }
-                    }
-                )) { _ in
+                .sheet(item: $model.presentedSheet) { _ in
                     presentedSheetView
                 }
                 .onAppear {
@@ -112,7 +87,7 @@ struct NoteListView: View {
     // MARK: - Bottom Overlay (FABs + Category Picker)
     private var bottomOverlay: some View {
         ZStack {
-            if !store.isScrolling {
+            if !model.isScrolling {
                 fabButtons
             }
             
@@ -121,7 +96,7 @@ struct NoteListView: View {
         .padding()
         .animation(
             .spring(response: animationDuration),
-            value: store.isScrolling
+            value: model.isScrolling
         )
     }
     
@@ -130,7 +105,7 @@ struct NoteListView: View {
             CircularButton(
                 systemImage: "arrow.up.arrow.down",
                 action: {
-                    store.send(.sortButtonTapped)
+                    model.sortButtonTapped()
                 },
                 onSizeChanged: { size in
                     fabSize = size
@@ -142,7 +117,7 @@ struct NoteListView: View {
             CircularButton(
                 systemImage: "plus",
                 action: {
-                    store.send(.addNoteButtonTapped)
+                    model.addNoteButtonTapped()
                 }
             )
         }
@@ -151,34 +126,34 @@ struct NoteListView: View {
     
     private var categoryPickerWithSpacers: some View {
         HStack(spacing: 4) {
-            if !store.isScrolling {
+            if !model.isScrolling {
                 Spacer()
                     .frame(width: fabSize.width)
                     .transition(.opacity.combined(with: .scale))
             }
 
             CategoryPickerView(
-                selectedCategory: store.filterCategory,
+                selectedCategory: model.filterCategory,
                 onCategorySelected: { category in
-                    store.send(.categorySelected(category))
+                    model.filterCategory = category
                 },
                 animationDuration: animationDuration,
                 highlightAnimationDuration: highlightAnimationDuration,
                 compactWidth: compactDialWidth,
                 onScrollBegin: {
-                    store.send(.scrollBegin)
+                    model.isScrolling = true
                 },
                 onScrollEnd: {
-                    store.send(.scrollEnd)
+                    model.isScrolling = false
                 },
                 onCenteredItemChanged: { category in
-                    store.send(.categorySelected(category))
+                    model.filterCategory = category
                 }
             )
             .elevatedShadow()
-            .frame(maxWidth: store.isScrolling ? .infinity : nil)
+            .frame(maxWidth: model.isScrolling ? .infinity : nil)
 
-            if !store.isScrolling {
+            if !model.isScrolling {
                 Spacer()
                     .frame(width: fabSize.width)
                     .transition(.opacity.combined(with: .scale))
@@ -190,28 +165,22 @@ struct NoteListView: View {
     // MARK: - Sheets
     @ViewBuilder
     private var presentedSheetView: some View {
-        switch store.presentedSheet {
+        switch model.presentedSheet {
         case .detail(let note):
             NoteDetailView(note: note) {
-                store.send(.editNoteTapped(note))
+                model.editNoteTapped(note)
             }
         case .edit(let note):
             NoteEditView(
                 noteToEdit: note,
-                defaultCategory: store.filterCategory
+                defaultCategory: model.filterCategory
             ) { newNote in
-                store.send(.saveNote(newNote))
+                Task { await model.saveNote(newNote) }
             }
         case .sort:
             NoteSortSheet(
-                selectedSortType: Binding(
-                    get: { store.sortType },
-                    set: { store.send(.sortTypeChanged($0)) }
-                ),
-                selectedSortOrder: Binding(
-                    get: { store.sortOrder },
-                    set: { store.send(.sortOrderChanged($0)) }
-                )
+                selectedSortType: $model.sortType,
+                selectedSortOrder: $model.sortOrder
             )
         case .settings:
             SettingsView()
@@ -225,20 +194,11 @@ struct NoteListView: View {
 
 #Preview {
     NoteListView(
-        store: Store(
-            initialState: NoteListFeature.State(
-                notes: MockData.sampleNotes,
-                filterCategory: nil  // "All" selected by default
-            )
-        ) {
-            NoteListFeature()
-        } withDependencies: { values in
-            // Override NoteStore for previews to return the sample notes
-            values.noteStore = NoteStore(
-                fetchNotes: { MockData.sampleNotes },
-                saveNote: { _ in },
-                deleteNote: { _ in }
-            )
-        }
+        model: NoteListModel(
+            notes: MockData.sampleNotes,
+            filterCategory: nil,  // "All" selected by default
+            noteStore: .preview,
+            analytics: .noop
+        )
     )
 }

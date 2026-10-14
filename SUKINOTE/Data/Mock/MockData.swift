@@ -1,13 +1,15 @@
-//
-//  MockData.swift
-//  SUKINOTE
-//
-//  Created by Kazma Wed on 2025/10/24.
-//
-
 import Foundation
+import UIKit
 
 enum MockData {
+    static let sampleImageData: Data? = {
+        if let path = Bundle.main.path(forResource: "sample_image", ofType: "jpg"),
+           let image = UIImage(contentsOfFile: path) {
+            return image.jpegData(compressionQuality: 0.8)
+        }
+        return nil
+    }()
+
     static var sampleNotes: [Note] {
         let now = Date()
         let calendar = Calendar.current
@@ -30,7 +32,8 @@ enum MockData {
                 createdAt: calendar.date(byAdding: .day, value: -10, to: now)!,
                 category: .like,
                 title: "Kyoto in Spring",
-                content: "Walking along the Philosopher's Path during sakura season was absolutely breathtaking. The cherry blossoms formed a pink canopy overhead, with petals gently falling like snow. The sound of water flowing in the canal, mixed with the distant chatter of other visitors, created a peaceful atmosphere. I stopped at a small café halfway through and had matcha with wagashi while watching the petals drift by. This is definitely one of those moments I want to remember forever."
+                content: "Walking along the Philosopher's Path during sakura season was absolutely breathtaking. The cherry blossoms formed a pink canopy overhead, with petals gently falling like snow. The sound of water flowing in the canal, mixed with the distant chatter of other visitors, created a peaceful atmosphere. I stopped at a small café halfway through and had matcha with wagashi while watching the petals drift by. This is definitely one of those moments I want to remember forever.",
+                images: sampleImageData.map { [$0] } ?? []
             ),
             // dislike (2)
             Note(

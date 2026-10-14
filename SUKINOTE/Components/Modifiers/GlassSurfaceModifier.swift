@@ -1,10 +1,3 @@
-//  GlassSurfaceModifier.swift
-//  SUKINOTE
-//
-//  Reusable glass-like surface to match button .glass style look.
-//  Adds material, subtle inner highlight and stroke to avoid looking darker on large areas.
-//
-
 import SwiftUI
 
 struct GlassSurfaceModifier: ViewModifier {

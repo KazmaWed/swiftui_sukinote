@@ -1,10 +1,3 @@
-//
-//  NoteEditView.swift
-//  SUKINOTE
-//
-//  Created by Kazma Wed on 2025/10/26.
-//
-
 import PhotosUI
 import SwiftUI
 

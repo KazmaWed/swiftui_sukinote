@@ -1,10 +1,3 @@
-//
-//  PersonSelectorView.swift
-//  SUKINOTE
-//
-//  Created by Kazma Wed on 2025/11/10.
-//
-
 import SwiftUI
 
 struct PersonSelectorView: View {

@@ -1,11 +1,3 @@
-//
-//  SUKINOTEApp.swift
-//  SUKINOTE
-//
-//  Created by Kazma Wed on 2025/10/24.
-//
-
-import ComposableArchitecture
 import Firebase
 import SwiftData
 import SwiftUI
@@ -46,16 +38,18 @@ struct SUKINOTEApp: App {
         }
     }()
 
-    // Shared Store that persists across theme changes
-    let store = Store(
-        initialState: NoteListFeature.State()
-    ) {
-        NoteListFeature()
+    // Shared model that persists across theme changes
+    let model: NoteListModel
+
+    init() {
+        model = NoteListModel(
+            noteStore: .live(container: sharedModelContainer)
+        )
     }
 
     var body: some Scene {
         WindowGroup {
-            NoteListView(store: store)
+            NoteListView(model: model)
                 .preferredColorScheme(selectedTheme.colorScheme)
         }
         .modelContainer(sharedModelContainer)

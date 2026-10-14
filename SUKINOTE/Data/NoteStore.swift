@@ -1,13 +1,5 @@
-//
-//  NoteStore.swift
-//  SUKINOTE
-//
-//  Created by Kazma Wed on 2025/11/01.
-//
-
 import Foundation
 import SwiftData
-import ComposableArchitecture
 
 struct NoteStore: Sendable {
     var fetchNotes: @Sendable () async throws -> [Note]
@@ -15,11 +7,9 @@ struct NoteStore: Sendable {
     var deleteNote: @Sendable (Note) async throws -> Void
 }
 
-extension NoteStore: DependencyKey {
-    static let liveValue: NoteStore = {
-        let container = try! ModelContainer(for: Note.self)
-
-        return NoteStore(
+extension NoteStore {
+    static func live(container: ModelContainer) -> NoteStore {
+        NoteStore(
             fetchNotes: {
                 let context = ModelContext(container)
                 let descriptor = FetchDescriptor<Note>(
@@ -44,12 +34,12 @@ extension NoteStore: DependencyKey {
                 }
             }
         )
-    }()
-}
-
-extension DependencyValues {
-    var noteStore: NoteStore {
-        get { self[NoteStore.self] }
-        set { self[NoteStore.self] = newValue }
     }
+
+    /// In-memory store backed by sample notes, for previews
+    static let preview = NoteStore(
+        fetchNotes: { MockData.sampleNotes },
+        saveNote: { _ in },
+        deleteNote: { _ in }
+    )
 }
