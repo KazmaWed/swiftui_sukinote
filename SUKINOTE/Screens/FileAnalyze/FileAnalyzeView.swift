@@ -6,7 +6,7 @@ struct FileAnalyzeView: View {
 
     private enum LoadState {
         case loading
-        case loaded(Data, json: String?)  // json is nil for non-text files
+        case loaded(Data, format: ImportedFileFormat, json: String?)  // json is nil for non-text files
         case failed(Error)
     }
 
@@ -17,9 +17,7 @@ struct FileAnalyzeView: View {
     }
 
     private var iconName: String {
-        if contentType?.conforms(to: .image) == true {
-            return "photo"
-        }
+        if contentType?.conforms(to: .image) == true { return "photo" }
         return "doc.text"
     }
 
@@ -52,9 +50,12 @@ struct FileAnalyzeView: View {
         switch loadState {
         case .loading:
             ProgressView("Loading...")
-        case .loaded(let data, let json):
+        case .loaded(let data, let format, let json):
             VStack(spacing: 8) {
                 Text(data.count.formatted(.byteCount(style: .file)))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Text("Format: \(String(describing: format))")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 if let json {
@@ -93,19 +94,28 @@ struct FileAnalyzeView: View {
         loadState = .loading
         do {
             let data = try await Self.readData(from: fileURL)
+            let format = await Self.detectFormat(fileURL: fileURL, data: data)
             let json =
                 contentType?.conforms(to: .image) == true
                 ? nil : try await Self.makeLineTalkJSON(from: data)
-            loadState = .loaded(data, json: json)
+            loadState = .loaded(data, format: format, json: json)
         } catch {
             loadState = .failed(error)
         }
+    }
+}
+
+private extension FileAnalyzeView {
+
+    @concurrent
+    nonisolated static func detectFormat(fileURL: URL, data: Data) async -> ImportedFileFormat {
+        ImportedFileFormat.detect(fileURL: fileURL, data: data)
     }
 
     /// Parses LINE chat history text into the JSON passed to LLMs.
     /// Runs off the main actor since chat histories can be large.
     @concurrent
-    nonisolated private static func makeLineTalkJSON(
+    nonisolated static func makeLineTalkJSON(
         from data: Data
     ) async throws -> String {
         let log = LineTalkParser.parse(String(decoding: data, as: UTF8.self))
@@ -115,7 +125,7 @@ struct FileAnalyzeView: View {
     /// Runs off the main actor because NSFileCoordinator blocks
     /// while waiting for the file (e.g. an iCloud download) to become available.
     @concurrent
-    nonisolated private static func readData(from url: URL) async throws -> Data {
+    nonisolated static func readData(from url: URL) async throws -> Data {
         let hasAccess = url.startAccessingSecurityScopedResource()
         defer {
             if hasAccess { url.stopAccessingSecurityScopedResource() }
