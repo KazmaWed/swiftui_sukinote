@@ -102,3 +102,6 @@ iOSInjectionProject/
 */GoogleService-Info.plist
 
 # End of https://www.toptal.com/developers/gitignore/api/xcode,swift
+
+# OpenAI API key for the mock backend
+**/Secrets.plist

@@ -1,0 +1,43 @@
+{
+  "type": "object",
+  "properties": {
+    "notes": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/note" }
+    }
+  },
+  "required": ["notes"],
+  "additionalProperties": false,
+  "$defs": {
+    "note": {
+      "type": "object",
+      "properties": {
+        "category": {
+          "type": "string",
+          "enum": ["like", "dislike", "hobby", "anniversary", "family", "school", "work"]
+        },
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "date": {
+          "anyOf": [
+            { "$ref": "#/$defs/partialDate" },
+            { "type": "null" }
+          ]
+        },
+        "isAnnual": { "type": "boolean" }
+      },
+      "required": ["category", "title", "content", "date", "isAnnual"],
+      "additionalProperties": false
+    },
+    "partialDate": {
+      "type": "object",
+      "properties": {
+        "year": { "type": ["integer", "null"] },
+        "month": { "type": ["integer", "null"] },
+        "day": { "type": ["integer", "null"] }
+      },
+      "required": ["year", "month", "day"],
+      "additionalProperties": false
+    }
+  }
+}
