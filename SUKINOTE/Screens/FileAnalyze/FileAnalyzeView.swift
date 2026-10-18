@@ -13,6 +13,7 @@ struct FileAnalyzeView: View {
 
     @State private var loadState: LoadState = .loading
     @State private var analysisTask: Task<Void, Never>? = nil  // Non-nil while the AI analysis is running
+    @State private var analysisResult: TalkAnalysis? = nil  // Set when the analysis completes to show the result
     @State private var isStopAnalysisAlertPresented: Bool = false
 
     private var contentType: UTType? {
@@ -51,6 +52,7 @@ struct FileAnalyzeView: View {
             }
         }
         .navigationBarBackButtonHidden(analysisTask != nil)
+        .interactiveDismissDisabled(analysisTask != nil)
         .toolbar {
             if analysisTask != nil {
                 ToolbarItem(placement: .topBarLeading) {
@@ -60,6 +62,18 @@ struct FileAnalyzeView: View {
                         Image(systemName: "chevron.backward")
                             .accessibilityLabel("Back")
                     }
+                }
+            }
+        }
+        .fullScreenCover(
+            isPresented: Binding(
+                get: { analysisResult != nil },
+                set: { if !$0 { analysisResult = nil } }
+            )
+        ) {
+            if let analysisResult {
+                NavigationStack {
+                    AnalysisResultView(analysis: analysisResult)
                 }
             }
         }
@@ -136,7 +150,6 @@ struct FileAnalyzeView: View {
         }
     }
 
-    // TODO: Show the result on screen instead of printing it
     private func analyzeTalk(data: Data) async {
         do {
             let input = try await Self.makeTalkInput(from: data)
@@ -150,9 +163,7 @@ struct FileAnalyzeView: View {
                 subjectName: subjectName,
                 talkJSON: input.json
             )
-            let encoder = JSONEncoder()
-            encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
-            print("[AnalyzeTalk] Result:\n" + String(decoding: try encoder.encode(analysis), as: UTF8.self))
+            analysisResult = analysis
         } catch {
             print("[AnalyzeTalk] Failed: \(error)")
         }

@@ -7,41 +7,13 @@ struct NoteListRow: View {
     let onDelete: () -> Void
 
     var body: some View {
-        HStack {
-            // Category icon
-            Image(systemName: note.category.iconFilled)
-                .imageScale(.large)
-                .foregroundStyle(note.category.highlightColor)
-                .frame(width: 24, alignment: .center)
-            Spacer().frame(width: 16)
-            // Title, Content
-            VStack(alignment: .leading, spacing: 4) {
-                Text(note.title.isEmpty ? "No Title" : note.title)
-                    .font(.headline)
-                if let anniversaryDate = note.anniversaryDate {
-                    Text(anniversaryDate.formatted(date: .long, time: .omitted))
-                        .font(.headline)
-                        .fontWeight(.regular)
-                }
-                if note.content != "" {
-                    Text(note.content)
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                        .lineLimit(1)
-                }
-            }
-            Spacer().frame(width: 16)
-            Spacer()
-            // Image thumbnail
-            if let images = note.images, let firstImage = images.first,
-               let uiImage = UIImage(data: firstImage) {
-                Image(uiImage: uiImage)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: 64, height: 48)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-            }
-        }
+        NoteRowContent(
+            category: note.category,
+            title: note.title,
+            dateText: note.anniversaryDate?.formatted(date: .long, time: .omitted),
+            content: note.content,
+            thumbnailData: note.images?.first
+        )
         .background(.background)
         .onTapGesture { onTap() }
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
