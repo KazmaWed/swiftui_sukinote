@@ -212,7 +212,7 @@ struct NoteEditView: View {
                 handleFileImport(result)
             }
             .navigationDestination(item: $importedFileURL) { url in
-                FileAnalyzeView(fileURL: url)
+                FileAnalyzeView(fileURL: url, onFinish: { dismiss() })
             }
         }
     }

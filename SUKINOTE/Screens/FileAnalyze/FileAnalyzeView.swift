@@ -4,6 +4,7 @@ import UniformTypeIdentifiers
 struct FileAnalyzeView: View {
     @Environment(\.dismiss) private var dismiss
     let fileURL: URL
+    var onFinish: () -> Void = {}
 
     private enum LoadState {
         case loading
@@ -73,7 +74,7 @@ struct FileAnalyzeView: View {
         ) {
             if let analysisResult {
                 NavigationStack {
-                    AnalysisResultView(analysis: analysisResult)
+                    AnalysisResultView(analysis: analysisResult, onClose: onFinish)
                 }
             }
         }

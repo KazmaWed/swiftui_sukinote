@@ -2,6 +2,9 @@ import SwiftUI
 
 struct AnalysisResultView: View {
     let analysis: TalkAnalysis
+    var onClose: () -> Void = {}
+
+    @State private var isCloseAlertPresented: Bool = false
 
     var body: some View {
         List(analysis.notes.indices, id: \.self) { index in
@@ -35,12 +38,20 @@ struct AnalysisResultView: View {
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 Button {
-                    // TODO: Close
+                    isCloseAlertPresented = true
                 } label: {
                     Image(systemName: "xmark")
                         .accessibilityLabel("Close")
                 }
             }
+        }
+        .alert("Discard the results?", isPresented: $isCloseAlertPresented) {
+            Button("Discard", role: .destructive) {
+                onClose()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("The analysis results will not be saved.")
         }
     }
 }
