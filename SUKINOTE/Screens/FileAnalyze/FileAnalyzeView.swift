@@ -6,7 +6,7 @@ struct FileAnalyzeView: View {
 
     private enum LoadState {
         case loading
-        case loaded(Data, format: ImportedFileFormat, json: String?)  // json is nil for non-text files
+        case loaded(Data, format: ImportedFileFormat)
         case failed(Error)
     }
 
@@ -50,7 +50,7 @@ struct FileAnalyzeView: View {
         switch loadState {
         case .loading:
             ProgressView("Loading...")
-        case .loaded(let data, let format, let json):
+        case .loaded(let data, let format):
             VStack(spacing: 8) {
                 Text(data.count.formatted(.byteCount(style: .file)))
                     .font(.subheadline)
@@ -58,21 +58,8 @@ struct FileAnalyzeView: View {
                 Text("Format: \(String(describing: format))")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                if let json {
-                    ScrollView {
-                        Text(json)
-                            .font(.system(.footnote, design: .monospaced))
-                            .textSelection(.enabled)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding()
-                    }
-                    .background(Color(.systemBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                } else {
-                    Text("Analyze this file to create notes.\nThis feature is coming soon.")
-                        .font(.body)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
+                Button("AI Analyze") {
+                    Task { await analyzeTalk(data: data) }
                 }
             }
         case .failed(let error):
@@ -95,31 +82,49 @@ struct FileAnalyzeView: View {
         do {
             let data = try await Self.readData(from: fileURL)
             let format = await Self.detectFormat(fileURL: fileURL, data: data)
-            let json =
-                contentType?.conforms(to: .image) == true
-                ? nil : try await Self.makeLineTalkJSON(from: data)
-            loadState = .loaded(data, format: format, json: json)
+            loadState = .loaded(data, format: format)
         } catch {
             loadState = .failed(error)
+        }
+    }
+
+    // TODO: Show the result on screen instead of printing it
+    private func analyzeTalk(data: Data) async {
+        do {
+            let input = try await Self.makeTalkInput(from: data)
+            // TODO: Let the user choose the subject person; uses the first sender for now
+            guard let subjectName = input.firstSender else {
+                print("[AnalyzeTalk] No messages found in the file")
+                return
+            }
+            print("[AnalyzeTalk] Analyzing about \(subjectName)...")
+            let analysis = try await RemoteTalkAnalyzeService.mockBackend.analyze(
+                subjectName: subjectName,
+                talkJSON: input.json
+            )
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
+            print("[AnalyzeTalk] Result:\n" + String(decoding: try encoder.encode(analysis), as: UTF8.self))
+        } catch {
+            print("[AnalyzeTalk] Failed: \(error)")
         }
     }
 }
 
 private extension FileAnalyzeView {
 
+    /// Parses LINE chat history into the JSON sent for analysis.
+    /// Runs off the main actor since chat histories can be large.
+    @concurrent
+    nonisolated static func makeTalkInput(from data: Data) async throws -> (json: String, firstSender: String?) {
+        let log = LineTalkParser.parse(String(decoding: data, as: UTF8.self))
+        let firstSender = log.days.lazy.flatMap(\.messages).first { !$0.sender.isEmpty }?.sender
+        return (String(decoding: try log.jsonData(), as: UTF8.self), firstSender)
+    }
+
     @concurrent
     nonisolated static func detectFormat(fileURL: URL, data: Data) async -> ImportedFileFormat {
         ImportedFileFormat.detect(fileURL: fileURL, data: data)
-    }
-
-    /// Parses LINE chat history text into the JSON passed to LLMs.
-    /// Runs off the main actor since chat histories can be large.
-    @concurrent
-    nonisolated static func makeLineTalkJSON(
-        from data: Data
-    ) async throws -> String {
-        let log = LineTalkParser.parse(String(decoding: data, as: UTF8.self))
-        return String(decoding: try log.jsonData(), as: UTF8.self)
     }
 
     /// Runs off the main actor because NSFileCoordinator blocks
