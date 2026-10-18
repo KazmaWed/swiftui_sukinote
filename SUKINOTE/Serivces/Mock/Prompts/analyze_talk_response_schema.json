@@ -16,8 +16,14 @@
           "type": "string",
           "enum": ["like", "dislike", "hobby", "anniversary", "family", "school", "work"]
         },
-        "title": { "type": "string" },
-        "content": { "type": "string" },
+        "title": {
+          "type": "string",
+          "description": "The specific item itself (e.g. 和食), not a label for the kind of item (e.g. 好きな食べ物)"
+        },
+        "content": {
+          "type": "string",
+          "description": "One or two sentences about the item, including related general statements from the chat"
+        },
         "date": {
           "anyOf": [
             { "$ref": "#/$defs/partialDate" },
