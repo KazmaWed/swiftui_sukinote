@@ -3,22 +3,22 @@ import UniformTypeIdentifiers
 
 struct FileAnalyzeView: View {
     @Environment(\.dismiss) private var dismiss
-    let fileURL: URL
-    var onFinish: () -> Void = {}
+    @State private var model: FileAnalyzeModel
+    var onFinish: () -> Void
 
-    private enum LoadState {
-        case loading
-        case loaded(Data, format: ImportedFileFormat)
-        case failed(Error)
-    }
-
-    @State private var loadState: LoadState = .loading
-    @State private var analysisTask: Task<Void, Never>? = nil  // Non-nil while the AI analysis is running
-    @State private var analysisResult: TalkAnalysis? = nil  // Set when the analysis completes to show the result
     @State private var isStopAnalysisAlertPresented: Bool = false
 
+    init(
+        fileURL: URL,
+        analyzeService: any TalkAnalyzeService = RemoteTalkAnalyzeService.mockBackend,
+        onFinish: @escaping () -> Void = {}
+    ) {
+        _model = State(initialValue: FileAnalyzeModel(fileURL: fileURL, analyzeService: analyzeService))
+        self.onFinish = onFinish
+    }
+
     private var contentType: UTType? {
-        UTType(filenameExtension: fileURL.pathExtension)
+        UTType(filenameExtension: model.fileURL.pathExtension)
     }
 
     private var iconName: String {
@@ -32,7 +32,7 @@ struct FileAnalyzeView: View {
                 .font(.system(size: 60))
                 .foregroundStyle(.secondary)
 
-            Text(fileURL.lastPathComponent)
+            Text(model.fileURL.lastPathComponent)
                 .font(.title2)
                 .fontWeight(.semibold)
                 .multilineTextAlignment(.center)
@@ -44,18 +44,18 @@ struct FileAnalyzeView: View {
         .frame(maxWidth: .infinity)
         .navigationTitle("Analyze File")
         .navigationBarTitleDisplayMode(.inline)
-        .task(id: fileURL) {
-            await loadFile()
+        .task {
+            await model.loadFile()
         }
         .overlay {
-            if analysisTask != nil {
+            if model.isAnalyzing {
                 analyzingOverlay
             }
         }
-        .navigationBarBackButtonHidden(analysisTask != nil)
-        .interactiveDismissDisabled(analysisTask != nil)
+        .navigationBarBackButtonHidden(model.isAnalyzing)
+        .interactiveDismissDisabled(model.isAnalyzing)
         .toolbar {
-            if analysisTask != nil {
+            if model.isAnalyzing {
                 ToolbarItem(placement: .topBarLeading) {
                     Button {
                         isStopAnalysisAlertPresented = true
@@ -68,11 +68,11 @@ struct FileAnalyzeView: View {
         }
         .fullScreenCover(
             isPresented: Binding(
-                get: { analysisResult != nil },
-                set: { if !$0 { analysisResult = nil } }
+                get: { model.analysisResult != nil },
+                set: { if !$0 { model.analysisResult = nil } }
             )
         ) {
-            if let analysisResult {
+            if let analysisResult = model.analysisResult {
                 NavigationStack {
                     AnalysisResultView(analysis: analysisResult, onClose: onFinish)
                 }
@@ -80,7 +80,7 @@ struct FileAnalyzeView: View {
         }
         .alert("Stop analyzing?", isPresented: $isStopAnalysisAlertPresented) {
             Button("Stop", role: .destructive) {
-                analysisTask?.cancel()
+                model.cancelAnalysis()
                 dismiss()
             }
             Button("Continue", role: .cancel) {}
@@ -102,7 +102,7 @@ struct FileAnalyzeView: View {
 
     @ViewBuilder
     private var statusView: some View {
-        switch loadState {
+        switch model.loadState {
         case .loading:
             ProgressView("Loading...")
         case .loaded(let data, let format):
@@ -115,15 +115,12 @@ struct FileAnalyzeView: View {
                     .foregroundStyle(.secondary)
                 Spacer()
                 Button("AI Analyze") {
-                    analysisTask = Task {
-                        await analyzeTalk(data: data)
-                        analysisTask = nil
-                    }
+                    model.startAnalysis()
                 }
                 .buttonStyle(.glassProminent)
                 .buttonSizing(.flexible)
                 .controlSize(.large)
-                .disabled(analysisTask != nil)
+                .disabled(model.isAnalyzing)
             }
         case .failed(let error):
             VStack(spacing: 12) {
@@ -134,84 +131,10 @@ struct FileAnalyzeView: View {
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                 Button("Retry") {
-                    Task { await loadFile() }
+                    Task { await model.loadFile() }
                 }
             }
         }
-    }
-
-    private func loadFile() async {
-        loadState = .loading
-        do {
-            let data = try await Self.readData(from: fileURL)
-            let format = await Self.detectFormat(fileURL: fileURL, data: data)
-            loadState = .loaded(data, format: format)
-        } catch {
-            loadState = .failed(error)
-        }
-    }
-
-    private func analyzeTalk(data: Data) async {
-        do {
-            let input = try await Self.makeTalkInput(from: data)
-            // TODO: Let the user choose the subject person; uses the first sender for now
-            guard let subjectName = input.firstSender else {
-                print("[AnalyzeTalk] No messages found in the file")
-                return
-            }
-            print("[AnalyzeTalk] Analyzing about \(subjectName)...")
-            let analysis = try await RemoteTalkAnalyzeService.mockBackend.analyze(
-                subjectName: subjectName,
-                talkJSON: input.json
-            )
-            analysisResult = analysis
-        } catch {
-            print("[AnalyzeTalk] Failed: \(error)")
-        }
-    }
-}
-
-private extension FileAnalyzeView {
-
-    /// Parses LINE chat history into the JSON sent for analysis.
-    /// Runs off the main actor since chat histories can be large.
-    @concurrent
-    nonisolated static func makeTalkInput(from data: Data) async throws -> (json: String, firstSender: String?) {
-        let log = LineTalkParser.parse(String(decoding: data, as: UTF8.self))
-        let firstSender = log.days.lazy.flatMap(\.messages).first { !$0.sender.isEmpty }?.sender
-        return (String(decoding: try log.jsonData(), as: UTF8.self), firstSender)
-    }
-
-    @concurrent
-    nonisolated static func detectFormat(fileURL: URL, data: Data) async -> ImportedFileFormat {
-        ImportedFileFormat.detect(fileURL: fileURL, data: data)
-    }
-
-    /// Runs off the main actor because NSFileCoordinator blocks
-    /// while waiting for the file (e.g. an iCloud download) to become available.
-    @concurrent
-    nonisolated static func readData(from url: URL) async throws -> Data {
-        let hasAccess = url.startAccessingSecurityScopedResource()
-        defer {
-            if hasAccess { url.stopAccessingSecurityScopedResource() }
-        }
-
-        var coordinatorError: NSError?
-        var result: Result<Data, Error>?
-        NSFileCoordinator().coordinate(
-            readingItemAt: url,
-            options: [],
-            error: &coordinatorError
-        ) { readingURL in
-            result = Result { try Data(contentsOf: readingURL) }
-        }
-        if let coordinatorError {
-            throw coordinatorError
-        }
-        guard let result else {
-            throw CocoaError(.fileReadUnknown)
-        }
-        return try result.get()
     }
 }
 
