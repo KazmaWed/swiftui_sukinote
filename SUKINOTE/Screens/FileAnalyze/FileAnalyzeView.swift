@@ -2,6 +2,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct FileAnalyzeView: View {
+    @Environment(\.dismiss) private var dismiss
     let fileURL: URL
 
     private enum LoadState {
@@ -11,6 +12,8 @@ struct FileAnalyzeView: View {
     }
 
     @State private var loadState: LoadState = .loading
+    @State private var analysisTask: Task<Void, Never>? = nil  // Non-nil while the AI analysis is running
+    @State private var isStopAnalysisAlertPresented: Bool = false
 
     private var contentType: UTType? {
         UTType(filenameExtension: fileURL.pathExtension)
@@ -37,11 +40,48 @@ struct FileAnalyzeView: View {
         }
         .padding()
         .frame(maxWidth: .infinity)
-        .background(Color(.systemGroupedBackground))
         .navigationTitle("Analyze File")
         .navigationBarTitleDisplayMode(.inline)
         .task(id: fileURL) {
             await loadFile()
+        }
+        .overlay {
+            if analysisTask != nil {
+                analyzingOverlay
+            }
+        }
+        .navigationBarBackButtonHidden(analysisTask != nil)
+        .toolbar {
+            if analysisTask != nil {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        isStopAnalysisAlertPresented = true
+                    } label: {
+                        Image(systemName: "chevron.backward")
+                            .accessibilityLabel("Back")
+                    }
+                }
+            }
+        }
+        .alert("Stop analyzing?", isPresented: $isStopAnalysisAlertPresented) {
+            Button("Stop", role: .destructive) {
+                analysisTask?.cancel()
+                dismiss()
+            }
+            Button("Continue", role: .cancel) {}
+        } message: {
+            Text("The analysis in progress will be cancelled.")
+        }
+    }
+
+    private var analyzingOverlay: some View {
+        ZStack {
+            Color.black.opacity(0.4)
+                .ignoresSafeArea()
+            ProgressView("Analyzing...")
+                .controlSize(.large)
+                .tint(.white)
+                .foregroundStyle(.white)
         }
     }
 
@@ -58,9 +98,17 @@ struct FileAnalyzeView: View {
                 Text("Format: \(String(describing: format))")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
+                Spacer()
                 Button("AI Analyze") {
-                    Task { await analyzeTalk(data: data) }
+                    analysisTask = Task {
+                        await analyzeTalk(data: data)
+                        analysisTask = nil
+                    }
                 }
+                .buttonStyle(.glassProminent)
+                .buttonSizing(.flexible)
+                .controlSize(.large)
+                .disabled(analysisTask != nil)
             }
         case .failed(let error):
             VStack(spacing: 12) {
