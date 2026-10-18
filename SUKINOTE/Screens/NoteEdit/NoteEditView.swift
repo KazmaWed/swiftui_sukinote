@@ -4,19 +4,11 @@ import UniformTypeIdentifiers
 
 struct NoteEditView: View {
     @Environment(\.dismiss) var dismiss
-    var noteToEdit: Note?
-    var defaultCategory: NoteCategory? = nil
+    @State private var model: NoteEditModel
     var onSave: (Note) -> Void  // Callback to save note
 
-    @State private var category: NoteCategory = .like
-    @State private var title: String = ""
-    @State private var content: String = ""
-    @State private var anniversaryRepeat: Bool = false
-    @State private var date: Date = Date()
     @State private var pickerItems: [PhotosPickerItem] = []  // PhotosPicker temporary selection
-    @State private var images: [Data] = []  // Actual image data for storage and display
     @State private var isFileImporterPresented: Bool = false
-    @State private var importedFileURL: URL? = nil  // File picked for analysis
 
     private static let importableContentTypes: [UTType] = [
         .plainText,
@@ -29,59 +21,12 @@ struct NoteEditView: View {
         defaultCategory: NoteCategory? = nil,
         onSave: @escaping (Note) -> Void
     ) {
-        self.noteToEdit = noteToEdit
-        self.defaultCategory = defaultCategory
+        _model = State(initialValue: NoteEditModel(noteToEdit: noteToEdit, defaultCategory: defaultCategory))
         self.onSave = onSave
-
-        // Initialize with existing note's values if available, otherwise use default values
-        _category = State(
-            initialValue: noteToEdit?.category
-                ?? defaultCategory
-                ?? .like
-        )
-        _title = State(initialValue: noteToEdit?.title ?? "")
-        _content = State(initialValue: noteToEdit?.content ?? "")
-        _images = State(
-            initialValue: noteToEdit?.images ?? []
-        )
-
-        // For anniversary notes, also get the date
-        if let note = noteToEdit, note.category == .anniversary {
-            _date = State(initialValue: note.anniversaryDate ?? Date())
-            _anniversaryRepeat = State(initialValue: note.isAnnual ?? false)
-        } else {
-            _date = State(initialValue: Date())
-            _anniversaryRepeat = State(initialValue: false)
-        }
     }
 
     func onSaveTapped() {
-        let newNote: Note
-
-        if let existingNote = noteToEdit {
-            // Edit mode: use existing ID
-            newNote = Note(
-                id: existingNote.id,
-                createdAt: existingNote.createdAt,
-                category: category,
-                title: title,
-                content: content,
-                anniversaryDate: category == .anniversary ? date : nil,
-                isAnnual: category == .anniversary ? anniversaryRepeat : nil,
-                images: images.isEmpty ? nil : images
-            )
-        } else {
-            // Create new mode
-            newNote = Note(
-                category: category,
-                title: title,
-                content: content,
-                anniversaryDate: category == .anniversary ? date : nil,
-                isAnnual: category == .anniversary ? anniversaryRepeat : nil,
-                images: images.isEmpty ? nil : images
-            )
-        }
-        onSave(newNote)
+        onSave(model.makeNote())
         dismiss()
     }
 
@@ -91,12 +36,12 @@ struct NoteEditView: View {
             Spacer().frame(height: 16)
             DatePicker(
                 "Anniversary",
-                selection: $date,
+                selection: $model.date,
                 displayedComponents: [.date]
             )
             .datePickerStyle(.compact)
             Spacer().frame(height: 16)
-            Toggle(isOn: $anniversaryRepeat) {
+            Toggle(isOn: $model.anniversaryRepeat) {
                 Text("Annual")
             }
         }
@@ -113,8 +58,8 @@ struct NoteEditView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
                     // Display selected images
-                    ForEach(images.indices, id: \.self) { index in
-                        if let uiImage = UIImage(data: images[index]) {
+                    ForEach(model.images.indices, id: \.self) { index in
+                        if let uiImage = UIImage(data: model.images[index]) {
                             ZStack(alignment: .topTrailing) {
                                 Image(uiImage: uiImage)
                                     .resizable()
@@ -130,7 +75,7 @@ struct NoteEditView: View {
                                     )
 
                                 Button(
-                                    action: { images.remove(at: index) }
+                                    action: { model.removeImage(at: index) }
                                 ) {
                                     Image(systemName: "xmark.circle.fill")
                                         .foregroundColor(.white)
@@ -170,13 +115,7 @@ struct NoteEditView: View {
         }
         .onChange(of: pickerItems) { oldValue, newValue in
             Task {
-                for item in newValue {
-                    if let data = try? await item.loadTransferable(
-                        type: Data.self
-                    ) {
-                        images.append(data)
-                    }
-                }
+                await model.addImages(from: newValue)
                 pickerItems.removeAll()
             }
         }
@@ -190,7 +129,7 @@ struct NoteEditView: View {
                 categorySection
                 Spacer().frame(height: 16)
                 textFieldsSection
-                if category == .anniversary {
+                if model.category == .anniversary {
                     anniversarySection
                 }
                 Spacer().frame(height: 16)
@@ -209,21 +148,11 @@ struct NoteEditView: View {
                 isPresented: $isFileImporterPresented,
                 allowedContentTypes: Self.importableContentTypes
             ) { result in
-                handleFileImport(result)
+                model.handleFileImport(result)
             }
-            .navigationDestination(item: $importedFileURL) { url in
+            .navigationDestination(item: $model.importedFileURL) { url in
                 FileAnalyzeView(fileURL: url, onFinish: { dismiss() })
             }
-        }
-    }
-
-    /// Navigates to FileAnalyzeView with the picked file.
-    /// The file is read there, so the screen appears without waiting for downloads.
-    private func handleFileImport(_ result: Result<URL, Error>) {
-        do {
-            importedFileURL = try result.get()
-        } catch {
-            print("Failed to import file: \(error)")
         }
     }
 
@@ -231,7 +160,7 @@ struct NoteEditView: View {
     private var headerBar: some View {
         ZStack {
             // Centered title
-            Text(noteToEdit == nil ? "New Note" : "Edit Note")
+            Text(model.isEditing ? "Edit Note" : "New Note")
                 .font(.title3)
                 .fontWeight(.semibold)
                 .frame(maxWidth: .infinity, alignment: .center)
@@ -266,12 +195,12 @@ struct NoteEditView: View {
     private var categorySection: some View {
         Text("Category")
         CategoryPickerView(
-            selectedCategory: category,
+            selectedCategory: model.category,
             onCategorySelected: { _ in },
             compactEnabled: false,
             onCenteredItemChanged: { selected in
                 if let selected = selected {
-                    category = selected
+                    model.category = selected
                 }
             },
             showAllOption: false
@@ -284,20 +213,20 @@ struct NoteEditView: View {
     @ViewBuilder
     private var textFieldsSection: some View {
         Text("Title")
-        TextField("Empty", text: $title)
+        TextField("Empty", text: $model.title)
             .padding()
             .background(Color(.systemBackground))
             .cornerRadius(8)
         Spacer().frame(height: 16)
         Text("Note")
         ZStack(alignment: .topLeading) {
-            if content.isEmpty {
+            if model.content.isEmpty {
                 Text("Empty")
                     .foregroundColor(Color(uiColor: .placeholderText))
                     .padding(.horizontal, 4)
                     .padding(.vertical, 8)
             }
-            TextEditor(text: $content)
+            TextEditor(text: $model.content)
                 .frame(minHeight: 100)
                 .scrollContentBackground(.hidden)
         }
