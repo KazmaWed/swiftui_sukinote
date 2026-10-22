@@ -22,6 +22,13 @@ struct AnalysisResultView: View {
             )
             .background(.background)
             .onTapGesture { model.editingIndex = index }
+            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                Button(role: .destructive) {
+                    model.deleteNote(at: index)
+                } label: {
+                    Label("Delete", systemImage: "trash")
+                }
+            }
         }
         .listStyle(.plain)
         .sheet(
@@ -31,9 +38,11 @@ struct AnalysisResultView: View {
             )
         ) {
             if let index = model.editingIndex {
-                NoteEditView(noteToEdit: model.noteForEditing(at: index)) { note in
-                    model.updateNote(at: index, with: note)
-                }
+                NoteEditView(
+                    noteToEdit: model.noteForEditing(at: index),
+                    onSave: { model.updateNote(at: index, with: $0) },
+                    onDelete: { model.deleteNote(at: index) }
+                )
             }
         }
         .overlay {

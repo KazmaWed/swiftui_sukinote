@@ -6,6 +6,7 @@ struct NoteEditView: View {
     @Environment(\.dismiss) var dismiss
     @State private var model: NoteEditModel
     var onSave: (Note) -> Void  // Callback to save note
+    var onDelete: (() -> Void)?
 
     @State private var pickerItems: [PhotosPickerItem] = []  // PhotosPicker temporary selection
     @State private var isFileImporterPresented: Bool = false
@@ -19,10 +20,12 @@ struct NoteEditView: View {
     init(
         noteToEdit: Note? = nil,
         defaultCategory: NoteCategory? = nil,
-        onSave: @escaping (Note) -> Void
+        onSave: @escaping (Note) -> Void,
+        onDelete: (() -> Void)? = nil
     ) {
         _model = State(initialValue: NoteEditModel(noteToEdit: noteToEdit, defaultCategory: defaultCategory))
         self.onSave = onSave
+        self.onDelete = onDelete
     }
 
     func onSaveTapped() {
@@ -136,6 +139,9 @@ struct NoteEditView: View {
                 imageAttachmentsSection
                 Spacer()
                 saveButton
+                if onDelete != nil {
+                    deleteButton
+                }
             }
             .frame(
                 maxWidth: .infinity,
@@ -241,6 +247,20 @@ struct NoteEditView: View {
             action: onSaveTapped
         ) {
             Text("Save")
+                .frame(maxWidth: .infinity)
+                .padding()
+        }
+        .buttonStyle(.borderless)
+        .frame(height: 48)
+    }
+
+    @ViewBuilder
+    private var deleteButton: some View {
+        Button(role: .destructive) {
+            onDelete?()
+            dismiss()
+        } label: {
+            Text("Delete")
                 .frame(maxWidth: .infinity)
                 .padding()
         }

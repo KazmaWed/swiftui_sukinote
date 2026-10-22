@@ -38,6 +38,11 @@ final class AnalysisResultModel {
         )
     }
 
+    func deleteNote(at index: Int) {
+        editingIndex = nil
+        notes.remove(at: index)
+    }
+
     func save() {
         // TODO: Save the notes
     }
