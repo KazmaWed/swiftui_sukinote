@@ -20,8 +20,22 @@ struct AnalysisResultView: View {
                 dateText: model.dateText(for: candidate),
                 content: candidate.content
             )
+            .background(.background)
+            .onTapGesture { model.editingIndex = index }
         }
         .listStyle(.plain)
+        .sheet(
+            isPresented: Binding(
+                get: { model.editingIndex != nil },
+                set: { if !$0 { model.editingIndex = nil } }
+            )
+        ) {
+            if let index = model.editingIndex {
+                NoteEditView(noteToEdit: model.noteForEditing(at: index)) { note in
+                    model.updateNote(at: index, with: note)
+                }
+            }
+        }
         .overlay {
             if model.notes.isEmpty {
                 Text("No note.")

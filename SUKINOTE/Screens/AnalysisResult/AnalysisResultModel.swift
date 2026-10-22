@@ -4,6 +4,7 @@ import Observation
 @Observable
 final class AnalysisResultModel {
     private(set) var notes: [TalkAnalysis.NoteCandidate]
+    var editingIndex: Int? = nil
 
     init(analysis: TalkAnalysis) {
         notes = analysis.notes
@@ -13,12 +14,42 @@ final class AnalysisResultModel {
         candidate.date.flatMap(Self.format)
     }
 
+    func noteForEditing(at index: Int) -> Note {
+        let candidate = notes[index]
+        return Note(
+            category: candidate.category,
+            title: candidate.title,
+            content: candidate.content,
+            anniversaryDate: candidate.date.flatMap(Self.resolveDate),
+            isAnnual: candidate.category == .anniversary ? candidate.isAnnual : nil
+        )
+    }
+
+    func updateNote(at index: Int, with note: Note) {
+        let components = note.anniversaryDate.map {
+            Calendar.current.dateComponents([.year, .month, .day], from: $0)
+        }
+        notes[index] = TalkAnalysis.NoteCandidate(
+            category: note.category,
+            title: note.title,
+            content: note.content,
+            date: components.map { .init(year: $0.year, month: $0.month, day: $0.day) },
+            isAnnual: note.isAnnual ?? false
+        )
+    }
+
     func save() {
         // TODO: Save the notes
     }
 }
 
 private extension AnalysisResultModel {
+
+    static func resolveDate(_ date: TalkAnalysis.PartialDate) -> Date? {
+        guard let month = date.month, let day = date.day else { return nil }
+        let year = date.year ?? Calendar.current.component(.year, from: Date())
+        return Calendar.current.date(from: DateComponents(year: year, month: month, day: day))
+    }
 
     /// Formats only the known parts of the date, e.g. "November 12" when the year is unknown.
     static func format(_ date: TalkAnalysis.PartialDate) -> String? {
