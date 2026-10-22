@@ -41,7 +41,8 @@ struct AnalysisResultView: View {
                 NoteEditView(
                     noteToEdit: model.noteForEditing(at: index),
                     onSave: { model.updateNote(at: index, with: $0) },
-                    onDelete: { model.deleteNote(at: index) }
+                    onDelete: { model.deleteNote(at: index) },
+                    showsImportButton: false
                 )
             }
         }

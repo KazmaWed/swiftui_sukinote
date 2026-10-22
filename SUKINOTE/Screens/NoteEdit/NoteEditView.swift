@@ -7,6 +7,7 @@ struct NoteEditView: View {
     @State private var model: NoteEditModel
     var onSave: (Note) -> Void  // Callback to save note
     var onDelete: (() -> Void)?
+    var showsImportButton: Bool
 
     @State private var pickerItems: [PhotosPickerItem] = []  // PhotosPicker temporary selection
     @State private var isFileImporterPresented: Bool = false
@@ -21,11 +22,13 @@ struct NoteEditView: View {
         noteToEdit: Note? = nil,
         defaultCategory: NoteCategory? = nil,
         onSave: @escaping (Note) -> Void,
-        onDelete: (() -> Void)? = nil
+        onDelete: (() -> Void)? = nil,
+        showsImportButton: Bool = true
     ) {
         _model = State(initialValue: NoteEditModel(noteToEdit: noteToEdit, defaultCategory: defaultCategory))
         self.onSave = onSave
         self.onDelete = onDelete
+        self.showsImportButton = showsImportButton
     }
 
     func onSaveTapped() {
@@ -173,14 +176,16 @@ struct NoteEditView: View {
 
             // Leading import button, trailing close button
             HStack {
-                Button(
-                    action: { isFileImporterPresented = true }
-                ) {
-                    Text("Import")
-                        .font(.body)
-                        .fontWeight(.medium)
+                if showsImportButton {
+                    Button(
+                        action: { isFileImporterPresented = true }
+                    ) {
+                        Text("Import")
+                            .font(.body)
+                            .fontWeight(.medium)
+                    }
+                    .buttonStyle(.borderless)
                 }
-                .buttonStyle(.borderless)
                 Spacer()
                 Button(
                     action: { dismiss() }
