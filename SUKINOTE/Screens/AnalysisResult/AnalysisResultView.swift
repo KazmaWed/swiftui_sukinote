@@ -20,7 +20,7 @@ struct AnalysisResultView: View {
                 dateText: model.dateText(for: candidate),
                 content: candidate.content
             )
-            .background(.background)
+            .contentShape(Rectangle())
             .onTapGesture { model.editingIndex = index }
             .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                 Button(role: .destructive) {

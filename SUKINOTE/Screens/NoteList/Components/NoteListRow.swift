@@ -14,7 +14,7 @@ struct NoteListRow: View {
             content: note.content,
             thumbnailData: note.images?.first
         )
-        .background(.background)
+        .contentShape(Rectangle())
         .onTapGesture { onTap() }
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
             Button(role: .destructive) {
