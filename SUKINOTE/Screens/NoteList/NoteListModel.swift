@@ -101,6 +101,20 @@ final class NoteListModel {
         await reloadNotes()
     }
 
+    func saveNotes(_ notes: [Note]) async {
+        filterCategory = nil
+        presentedSheet = nil
+        do {
+            for note in notes {
+                analytics.logSaveNote(note.toAnalyticsParams())
+                try await noteStore.saveNote(note)
+            }
+        } catch {
+            print("Failed to save notes: \(error)")
+        }
+        await reloadNotes()
+    }
+
     private func reloadNotes() async {
         do {
             notes = try await noteStore.fetchNotes()

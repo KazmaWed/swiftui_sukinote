@@ -4,6 +4,7 @@ import UniformTypeIdentifiers
 struct FileAnalyzeView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var model: FileAnalyzeModel
+    var onSaveNotes: ([Note]) -> Void
     var onFinish: () -> Void
 
     @State private var isStopAnalysisAlertPresented: Bool = false
@@ -11,9 +12,11 @@ struct FileAnalyzeView: View {
     init(
         fileURL: URL,
         analyzeService: any TalkAnalyzeService = RemoteTalkAnalyzeService.mockBackend,
+        onSaveNotes: @escaping ([Note]) -> Void = { _ in },
         onFinish: @escaping () -> Void = {}
     ) {
         _model = State(initialValue: FileAnalyzeModel(fileURL: fileURL, analyzeService: analyzeService))
+        self.onSaveNotes = onSaveNotes
         self.onFinish = onFinish
     }
 
@@ -74,7 +77,7 @@ struct FileAnalyzeView: View {
         ) {
             if let analysisResult = model.analysisResult {
                 NavigationStack {
-                    AnalysisResultView(analysis: analysisResult, onClose: onFinish)
+                    AnalysisResultView(analysis: analysisResult, onSave: onSaveNotes, onClose: onFinish)
                 }
             }
         }

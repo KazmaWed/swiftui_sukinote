@@ -8,6 +8,7 @@ struct NoteEditView: View {
     var onSave: (Note) -> Void  // Callback to save note
     var onDelete: (() -> Void)?
     var showsImportButton: Bool
+    var onSaveImportedNotes: ([Note]) -> Void
 
     @State private var pickerItems: [PhotosPickerItem] = []  // PhotosPicker temporary selection
     @State private var isFileImporterPresented: Bool = false
@@ -23,12 +24,14 @@ struct NoteEditView: View {
         defaultCategory: NoteCategory? = nil,
         onSave: @escaping (Note) -> Void,
         onDelete: (() -> Void)? = nil,
-        showsImportButton: Bool = true
+        showsImportButton: Bool = true,
+        onSaveImportedNotes: @escaping ([Note]) -> Void = { _ in }
     ) {
         _model = State(initialValue: NoteEditModel(noteToEdit: noteToEdit, defaultCategory: defaultCategory))
         self.onSave = onSave
         self.onDelete = onDelete
         self.showsImportButton = showsImportButton
+        self.onSaveImportedNotes = onSaveImportedNotes
     }
 
     func onSaveTapped() {
@@ -160,7 +163,7 @@ struct NoteEditView: View {
                 model.handleFileImport(result)
             }
             .navigationDestination(item: $model.importedFileURL) { url in
-                FileAnalyzeView(fileURL: url, onFinish: { dismiss() })
+                FileAnalyzeView(fileURL: url, onSaveNotes: onSaveImportedNotes, onFinish: { dismiss() })
             }
         }
     }

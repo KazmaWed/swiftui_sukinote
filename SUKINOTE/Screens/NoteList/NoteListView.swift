@@ -173,10 +173,14 @@ struct NoteListView: View {
         case .edit(let note):
             NoteEditView(
                 noteToEdit: note,
-                defaultCategory: model.filterCategory
-            ) { newNote in
-                Task { await model.saveNote(newNote) }
-            }
+                defaultCategory: model.filterCategory,
+                onSave: { newNote in
+                    Task { await model.saveNote(newNote) }
+                },
+                onSaveImportedNotes: { notes in
+                    Task { await model.saveNotes(notes) }
+                }
+            )
         case .sort:
             NoteSortSheet(
                 selectedSortType: $model.sortType,

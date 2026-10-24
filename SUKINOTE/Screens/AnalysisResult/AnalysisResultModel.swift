@@ -43,8 +43,8 @@ final class AnalysisResultModel {
         notes.remove(at: index)
     }
 
-    func save() {
-        // TODO: Save the notes
+    func makeNotes() -> [Note] {
+        notes.indices.map(noteForEditing(at:))
     }
 }
 

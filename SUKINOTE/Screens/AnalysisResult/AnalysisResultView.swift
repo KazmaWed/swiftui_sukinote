@@ -2,12 +2,18 @@ import SwiftUI
 
 struct AnalysisResultView: View {
     @State private var model: AnalysisResultModel
+    var onSave: ([Note]) -> Void
     var onClose: () -> Void
 
     @State private var isCloseAlertPresented: Bool = false
 
-    init(analysis: TalkAnalysis, onClose: @escaping () -> Void = {}) {
+    init(
+        analysis: TalkAnalysis,
+        onSave: @escaping ([Note]) -> Void = { _ in },
+        onClose: @escaping () -> Void = {}
+    ) {
         _model = State(initialValue: AnalysisResultModel(analysis: analysis))
+        self.onSave = onSave
         self.onClose = onClose
     }
 
@@ -55,7 +61,7 @@ struct AnalysisResultView: View {
         }
         .safeAreaInset(edge: .bottom) {
             Button("Save") {
-                model.save()
+                onSave(model.makeNotes())
             }
             .buttonStyle(.glassProminent)
             .buttonSizing(.flexible)
